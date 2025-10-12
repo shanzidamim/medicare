@@ -5,7 +5,7 @@ import 'package:get/get_core/src/get_main.dart';
 import '../../common/helper_functions.dart';
 
 class FullScreenLoader {
-  static void openLoadingDialog(String text,  image) {
+  static void openLoadingDialog(String text, String animation) {
     showDialog(
       context: Get.overlayContext!,
       // Use Get.overlayContext for overlay dialogs

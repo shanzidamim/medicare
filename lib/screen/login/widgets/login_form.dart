@@ -86,16 +86,8 @@ class LoginForm extends StatelessWidget {
             ///Create Account Button
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SignupScreen()),
-                  );
-                },
-                child: const Text("Create Account"),
-              ),
-            )
+              child: OutlinedButton(onPressed: () => Get.to(() => const SignupScreen()), child: const Text(TTexts.createAccount)),
+            ),
 
 
           ],

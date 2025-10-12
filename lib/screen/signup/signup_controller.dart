@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:medicare/screen/signup/verify_email.dart';
@@ -30,7 +31,8 @@ class SignupController extends GetxController {
   void signup() async {
     try {
       //start loading
-      FullScreenLoader.openLoadingDialog('We are processing your information...', Images.loading);
+      FullScreenLoader.openLoadingDialog(
+          'We are processing your information...', Images.loading);
 
       //check internet connectivity
       final isConnected = await NetworkManager.instance.isConnected();
@@ -42,14 +44,14 @@ class SignupController extends GetxController {
 
 
       //Form Validation
-      if(!signupFormKey.currentState!.validate()) {
+      if (!signupFormKey.currentState!.validate()) {
         //remove loader
         FullScreenLoader.stopLoading();
         return;
       }
 
       //privacy policy check
-      if(!privacyPolicy.value) {
+      if (!privacyPolicy.value) {
         Loaders.warningSnackBar(
           title: 'Accept Privacy Policy',
           message: 'In order to create an account, you must have to read and accept the privacy policy & terms od use.',
@@ -58,7 +60,9 @@ class SignupController extends GetxController {
       }
 
       //register user
-      final userCredential =await AuthenticationRepository.instance.registerWithEmailAndPassword(email.text.trim(),password.text.trim());
+      final userCredential = await AuthenticationRepository.instance
+          .registerWithEmailAndPassword(
+          email.text.trim(), password.text.trim());
 
       //save authenticated user data
       final newUser = UserModel(
@@ -77,24 +81,45 @@ class SignupController extends GetxController {
       FullScreenLoader.stopLoading();
 
       //show success msg
-      Loaders.successSnackBar(title: 'Congratulations', message: 'Your account has been created! Verify email to continue.');
+      Loaders.successSnackBar(title: 'Congratulations',
+          message: 'Your account has been created! Verify email to continue.');
 
       //move to verify email
-      Get.to(() =>  VerifyEmailScreen(email: email.text.trim()));
-    } catch (e) {
-      //remove loader
+      Get.to(() => VerifyEmailScreen(email: email.text.trim()));
+    } on FirebaseAuthException catch (e) {
       FullScreenLoader.stopLoading();
+      print("🔥 FirebaseAuthException: ${e.code} - ${e.message}");
 
-      // show some generic error
-      Loaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
-    }
-  }
-  /// [PhoneNoAuthentication]
-  Future<void> loginWithPhoneNumber(String phoneNo) async {
-    try {
-      await AuthenticationRepository.instance.loginWithPhoneNo(phoneNo);
+      // Handle specific Firebase errors
+      switch (e.code) {
+        case 'email-already-in-use':
+          Loaders.errorSnackBar(
+              title: 'Email Exists',
+              message: 'That email is already registered. Try logging in.');
+          break;
+        case 'invalid-email':
+          Loaders.errorSnackBar(
+              title: 'Invalid Email',
+              message: 'Please enter a valid email address.');
+          break;
+        case 'weak-password':
+          Loaders.errorSnackBar(
+              title: 'Weak Password',
+              message: 'Password should be at least 6 characters.');
+          break;
+        case 'network-request-failed':
+          Loaders.errorSnackBar(
+              title: 'Network Error',
+              message: 'Please check your internet connection.');
+          break;
+        default:
+          Loaders.errorSnackBar(
+              title: 'Error', message: e.message ?? 'Something went wrong.');
+      }
     } catch (e) {
-      throw e.toString();
+      FullScreenLoader.stopLoading();
+      print("🔥 General error: $e");
+      Loaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
     }
   }
 }

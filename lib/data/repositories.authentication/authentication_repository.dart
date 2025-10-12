@@ -12,7 +12,6 @@ import 'package:medicare/data/exceptions/format_exceptions.dart';
 import 'package:medicare/data/exceptions/platform_exceptions.dart';
 import 'package:medicare/screen/home/main_tab_screen.dart';
 import 'package:medicare/screen/login/splash_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../common/loaders.dart';
 import '../../screen/login/widgets/login.dart';
@@ -92,19 +91,23 @@ class AuthenticationRepository extends GetxController {
   ///email-authentication - register
   Future<UserCredential> registerWithEmailAndPassword(String email, String password) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+        print("✅ Firebase: User created successfully: ${credential.user?.uid}");
+
+      return credential;
     } on FirebaseAuthException catch (e) {
-      throw TFirebaseAuthException(e.code).message;
-    } on FirebaseException catch (e) {
-      throw TFirebaseException(e.code).message;
-    } on FormatException catch (_) {
-      throw const TFormatException();
-    } on PlatformException catch (e) {
-      throw TPlatformException(e.code).message;
-    } catch (e) {
-      throw 'Something went wrong. Please try again';
+      // 🔥 Print full Firebase error info
+      print("🔥 FirebaseAuthException: code=${e.code}, message=${e.message}");
+      rethrow; // Let SignupController handle it
+    } catch (e, stack) {
+      print("🔥 General error in registerWithEmailAndPassword: $e");
+      rethrow;
     }
   }
+
 
   /// [ReAuthenticate] - ReAuthenticate User
   Future<void> reAuthenticateWithEmailAndPassword(String email, String password) async {
@@ -232,16 +235,17 @@ class AuthenticationRepository extends GetxController {
     }
   }
 
+
+  /*---------------------------federated identity & social sign in------------------------*/
+
+
+
   ///logout user - valid for any authentication
   Future<void> logout() async {
     try {
       await _auth.signOut();
-
-      // await FacebookAuth.instance.logOut();
-      // await FirebaseAuth.instance.signOut();
-      Get.offAll(() => const WelcomeScreen());
-      await FirebaseAuth.instance.signOut();
       Get.offAll(() => const LoginScreen());
+
     } on FirebaseAuthException catch (e) {
       throw TFirebaseAuthException(e.code).message;
     } on FirebaseException catch (e) {
