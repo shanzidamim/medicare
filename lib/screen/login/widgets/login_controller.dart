@@ -12,7 +12,6 @@ import '../../signup/full_screen_loader.dart';
 
 class LoginController extends GetxController {
 
-  ///variables
   final rememberMe = false.obs;
   final hidePassword = true.obs;
   final localStorage = GetStorage();
@@ -32,11 +31,9 @@ class LoginController extends GetxController {
   ///EmailAndPasswordSignin
   Future<void> emailAndPasswordSignIn() async {
     try {
-      // Start Loading
       FullScreenLoader.openLoadingDialog(
           'Logging you in...', Images.loading);
 
-      // Check Internet Connectivity
       final isConnected = await NetworkManager.instance.isConnected();
       if (!isConnected) {
         FullScreenLoader.stopLoading();
@@ -44,26 +41,21 @@ class LoginController extends GetxController {
         return;
       }
 
-      // Form Validation
       if (!loginFormKey.currentState!.validate()) {
         FullScreenLoader.stopLoading();
         return;
       }
 
-      ///save data if remember me is selected
       if (rememberMe.value) {
         localStorage.write('Remember_Me_Email', email.text.trim());
         localStorage.write('Remember_Me_Password', password.text.trim());
       }
 
-      ///login user email
       final userCredentials = await AuthenticationRepository.instance
           .loginWithEmailAndPassword(email.text.trim(), password.text.trim());
 
-      ///remove loader
       FullScreenLoader.stopLoading();
 
-      //redirect
       AuthenticationRepository.instance.screenRedirect();
     } catch (e) {
       FullScreenLoader.stopLoading();
@@ -73,25 +65,15 @@ class LoginController extends GetxController {
 
   Future<void> googleSignIn() async {
     try {
-      // Start Loading
       FullScreenLoader.openLoadingDialog('Logging you in...', Images.loading);
 
-      // Check Internet Connectivity
       final isConnected = await NetworkManager.instance.isConnected();
       if (!isConnected) {
         FullScreenLoader.stopLoading();
         return;
       }
 
-      // Sign In with Google
-
-
-      // Save Authenticated user data in the Firebase Firestore
-
-
-
-
-      // Remove Loader
+      
       FullScreenLoader.stopLoading();
 
       AuthenticationRepository.instance.screenRedirect();
