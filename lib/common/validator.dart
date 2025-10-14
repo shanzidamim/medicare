@@ -1,19 +1,17 @@
 
 class Validator {
-  ///empty text validation
   static String? validateEmptyText(String? fieldName, String? value) {
     if(value == null || value.isEmpty) {
       return '$fieldName is required';
     }
     return null;
   }
-  /// Email Validation
+
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email is required.';
     }
 
-    // Regular expression for email validation
     final emailRegExp = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
 
     if (!emailRegExp.hasMatch(value)) {
@@ -29,7 +27,6 @@ class Validator {
       return 'Password is required.';
     }
 
-// Check for minimum password length
     if (value.length < 6) {
       return 'Password must be at least 6 characters long.';
     }
@@ -38,7 +35,6 @@ class Validator {
   }
 
 
-  /// Phone Number Validation
   static String? validatePhoneNumber(String? value) {
     if (value == null || value.isEmpty) {
       return 'Phone number is required.';
@@ -54,7 +50,6 @@ class Validator {
       return null;
     }
 
-    // Regular expression for phone number validation (assuming a 10-digit US phone number format)
     final phoneRegExp = RegExp(r'^\d{11}$');
 
     if (!phoneRegExp.hasMatch(value)) {

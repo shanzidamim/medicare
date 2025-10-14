@@ -5,7 +5,6 @@ import 'package:get_storage/get_storage.dart';
 
 
 import 'app.dart';
-import 'common/flutter_native_splash.dart';
 import 'data/repositories.authentication/authentication_repository.dart';
 import 'firebase_options.dart';
 
@@ -16,7 +15,6 @@ void main() async {
   ///--GetX local storage
   await GetStorage.init();
   /// Await native splash
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   /// Initialize firebase & authentication repository
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then(

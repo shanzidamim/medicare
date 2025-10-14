@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:medicare/screen/password/reset_password.dart';
 
-import '../../common/color_extension.dart';
 import '../../common/sizes.dart';
 import '../../common/text_strings.dart';
 import '../../common/validator.dart';

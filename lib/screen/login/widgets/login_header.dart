@@ -20,7 +20,7 @@ class LoginHeader extends StatelessWidget {
           image: AssetImage("assets/image/splash_logo2.png"),
         ),
         const SizedBox(height: TSizes.xl),
-// Image
+
         Text(
           TTexts.loginTitle,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(

@@ -67,6 +67,6 @@ class TextFormFieldTheme {
       borderRadius: BorderRadius.circular(14),
       borderSide: const BorderSide(width: 2, color: Colors.orange),
     ),
-  ); // InputDecorationTheme
+  );
 
 }

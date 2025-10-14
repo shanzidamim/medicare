@@ -10,11 +10,11 @@ import '../../common/image.dart';
 import '../../common/loaders.dart';
 import '../../common/text_strings.dart';
 import '../../data/repositories.authentication/authentication_repository.dart';
+import '../home/main_tab_screen.dart';
 
 class VerifyEmailController extends GetxController {
   static VerifyEmailController get instance => Get.find();
 
-  /// Send Email Whenever Verify Screen appears & Set Timer for auto redirect.
   @override
   void onInit() {
     sendEmailVerification();
@@ -22,7 +22,6 @@ class VerifyEmailController extends GetxController {
     super.onInit();
   }
 
-  /// Send Email Verification link
   sendEmailVerification() async {
     try {
       await AuthenticationRepository.instance.sendEmailVerification();
@@ -31,7 +30,6 @@ class VerifyEmailController extends GetxController {
       Loaders.errorSnackBar(title: 'Oh Snap!', message: e.toString());
     }
   }
-  /// Timer to automatically redirect on Email Verification
   setTimerForAutoRedirect() {
     Timer.periodic(
       const Duration(seconds: 1),
@@ -40,32 +38,19 @@ class VerifyEmailController extends GetxController {
         final user = FirebaseAuth.instance.currentUser;
         if (user?.emailVerified ?? false) {
           timer.cancel();
-          Get.off(
-                () => SuccessScreen(
-              image: Images.done,
-              title: TTexts.yourAccountCreatedTitle,
-              subTitle: TTexts.yourAccountCreatedSubTitle,
-              onPressed: () => AuthenticationRepository.instance.screenRedirect(),
-            ),
-          );
+          // Navigate directly to MainTabScreen
+          Get.offAll(() => const MainTabScreen());
         }
       },
     );
   }
-
-  /// Manually Check if Email Verified
   checkEmailVerificationStatus() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null && currentUser.emailVerified) {
-      Get.off(
-            () => SuccessScreen(
-          image: Images.done,
-          title: TTexts.yourAccountCreatedTitle,
-          subTitle: TTexts.yourAccountCreatedSubTitle,
-          onPressed: () => AuthenticationRepository.instance.screenRedirect(),
-        ),
-      );
+      // Navigate directly to MainTabScreen
+      Get.offAll(() => const MainTabScreen());
     }
   }
+
 
 }

@@ -8,12 +8,10 @@ class FullScreenLoader {
   static void openLoadingDialog(String text, String animation) {
     showDialog(
       context: Get.overlayContext!,
-      // Use Get.overlayContext for overlay dialogs
       barrierDismissible: false,
-      // The dialog can't be dismissed by tapping outside it
       builder: (_) =>
           PopScope(
-            canPop: false, // Disable popping with the back button
+            canPop: false,
             child: Container(
               color: HelperFunctions.isDarkMode(Get.context!)
                   ? Colors.black
@@ -27,8 +25,8 @@ class FullScreenLoader {
                     const SizedBox(height: 20),
                   ],
                 ),
-              ), // Column
-            ), // Container
+              ),
+            ),
           ),
     );
   }

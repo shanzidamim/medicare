@@ -34,7 +34,6 @@ class UserController extends GetxController {
     super.onInit();
   }
 
-  /// Fetch user record
   Future<void> fetchUserRecord() async {
     try{
       profileLoading.value = true;
@@ -47,14 +46,12 @@ class UserController extends GetxController {
     }
   }
 
-  // Save user Record from any Registration provider
   Future<void> saveUserRecord(UserCredential? userCredentials) async {
     try {
       if(userCredentials != null) {
         final nameParts = UserModel.nameParts(userCredentials.user!.displayName ?? '');
         final username = UserModel.generateUsername(userCredentials.user!.displayName ?? '');
 
-        //map data
         final user = UserModel(
           id: userCredentials.user!.uid,
           firstName: nameParts[0],
@@ -76,7 +73,6 @@ class UserController extends GetxController {
     }
   }
 
-  /// Delete Account Warning
   void deleteAccountWarningPopup() {
     Get.defaultDialog(
       contentPadding: const EdgeInsets.all(TSizes.md),
@@ -95,12 +91,10 @@ class UserController extends GetxController {
     );
   }
 
-  /// Delete User Account
   void deleteUserAccount() async {
     try {
       FullScreenLoader.openLoadingDialog('Processing', Images.loading);
 
-      /// First re-authenticate user
       final auth = AuthenticationRepository.instance;
       final provider = auth.authUser!.providerData.map((e) => e.providerId).first;
       if (provider.isNotEmpty) {

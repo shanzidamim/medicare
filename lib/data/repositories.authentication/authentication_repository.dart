@@ -43,7 +43,6 @@ class AuthenticationRepository extends GetxController {
   }
 
 
-  ///function to show relevant screen
    void screenRedirect() async {
     final user = _auth.currentUser;
     if(user != null){
@@ -53,7 +52,7 @@ class AuthenticationRepository extends GetxController {
         Get.offAll(() => VerifyEmailScreen(email: _auth.currentUser?.email));
       }
     } else {
-      ///local storage
+
 
       deviceStorage.writeIfNull('IsFirstTime', true);
       deviceStorage.read('IsFirstTime') != true
@@ -67,10 +66,7 @@ class AuthenticationRepository extends GetxController {
 
 
 
-  ///function to show relevant screen
 
-
-/*----------------------------- Email & password sign-in--------------------------------*/
   ///email-authentication - logIN
   Future<UserCredential> loginWithEmailAndPassword(String email, String password) async {
     try {
@@ -91,20 +87,17 @@ class AuthenticationRepository extends GetxController {
   ///email-authentication - register
   Future<UserCredential> registerWithEmailAndPassword(String email, String password) async {
     try {
-      final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-        print("✅ Firebase: User created successfully: ${credential.user?.uid}");
-
-      return credential;
+      return await _auth.createUserWithEmailAndPassword(email: email, password: password);
     } on FirebaseAuthException catch (e) {
-      // 🔥 Print full Firebase error info
-      print("🔥 FirebaseAuthException: code=${e.code}, message=${e.message}");
-      rethrow; // Let SignupController handle it
-    } catch (e, stack) {
-      print("🔥 General error in registerWithEmailAndPassword: $e");
-      rethrow;
+      throw TFirebaseAuthException(e.code).message;
+    } on FirebaseException catch (e) {
+      throw TFirebaseException(e.code).message;
+    } on FormatException catch (_) {
+      throw const TFormatException();
+    } on PlatformException catch (e) {
+      throw TPlatformException(e.code).message;
+    } catch (e) {
+      throw 'Something went wrong. Please try again';
     }
   }
 
@@ -147,7 +140,6 @@ class AuthenticationRepository extends GetxController {
     }
   }
 
-  ///authentication - authentication user
 
   ///email authentication - forget password
   Future<void> sendPasswordResetEmail(String email) async {
@@ -166,13 +158,10 @@ class AuthenticationRepository extends GetxController {
     }
   }
 
-/*---------------------------federated identity & social sign in------------------------*/
-  ///google authentication - google
 
 
-  ///facebook authentication - facebook
 
-/* ---------------------------- Phone Number sign-in ---------------------------------*/
+
 
   /// [PhoneAuthentication] - LOGIN - Register
   Future<void> loginWithPhoneNo(String phoneNumber) async {
@@ -208,13 +197,7 @@ class AuthenticationRepository extends GetxController {
           var signedInUser = await _auth.signInWithCredential(credential);
           isPhoneAutoVerified = signedInUser.user != null;
 
-          // await screenRedirect(
-          //   _auth.currentUser,
-          //   pinScreen: true,
-          //   stopLoadingWhenReady: true,
-          //   phoneNumber: phoneNumber,
-          // );
-          ///await screenRedirect(_auth.currentUser);
+
         },
         codeAutoRetrievalTimeout: (verificationId) {
           // phoneNoVerificationId.value = verificationId;

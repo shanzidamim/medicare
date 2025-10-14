@@ -16,7 +16,6 @@ class UserRepository extends GetxController {
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// Function to save user data to Firestore.
   Future<void> saveUserRecord(UserModel user) async {
     try {
       await _db.collection("Users").doc(user.id).set(user.toJson());
@@ -31,7 +30,6 @@ class UserRepository extends GetxController {
     }
   }
 
-  /// Function to fetch user details based on user ID.
   Future<UserModel> fetchUserDetails() async {
     try {
       final documentSnapshot =  await _db.collection("Users").doc(AuthenticationRepository.instance.authUser?.uid).get();
@@ -51,7 +49,6 @@ class UserRepository extends GetxController {
     }
   }
 
-  /// functiona to update user data
   Future<void> updateUserDetails(UserModel updatedUser) async {
     try {
       await _db.collection("Users").doc(updatedUser.id).update(updatedUser.toJson());
@@ -66,9 +63,7 @@ class UserRepository extends GetxController {
     }
   }
 
-  /// Function to update user data in Firestore.
 
-  /// Update any field in specific Users Collection
   Future<void> updateSingleField(Map<String, dynamic> json) async {
     try {
       await _db.collection("Users").doc(AuthenticationRepository.instance.authUser?.uid).update(json);
@@ -83,7 +78,6 @@ class UserRepository extends GetxController {
     }
   }
 
-  /// Function to remove user data from Firestore.
   Future<void> removeUserRecord(String userId) async {
     try {
       await _db.collection("Users").doc(userId).delete();

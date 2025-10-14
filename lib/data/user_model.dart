@@ -10,7 +10,6 @@ class UserModel {
   final String username;
   final String email;
   String phoneNumber;
-  ///constructor for user model
 
   UserModel({
     required this.id,
@@ -22,7 +21,6 @@ class UserModel {
 
   });
 
-  ///helper function to get the full name
   String get fullName => '$firstName $lastName';
 
   ///helper function to format phone number
@@ -42,7 +40,6 @@ class UserModel {
     return usernameWithPrefix;
   }
 
-  /// Static function to create an empty user model.
   static UserModel empty() => UserModel(id: '', firstName: '', lastName: '', username: '', email: '', phoneNumber: '');
 
   /// Convert model to JSON structure for storing data in Firebase.

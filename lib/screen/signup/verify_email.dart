@@ -29,18 +29,15 @@ class VerifyEmailScreen extends StatelessWidget {
         actions: [IconButton(onPressed: () => AuthenticationRepository.instance.logout(), icon: const Icon(CupertinoIcons.clear))],
       ),
       body: SingleChildScrollView(
-        //padding to give default equal space on all sides in all screens.
         child: Padding(
           padding: const EdgeInsets.all(TSizes.defaultSpace),
           child: Column(
             children: [
-              ///Image
               Image(
                 image: AssetImage(Images.verifymail),
               ),
               const SizedBox(height: TSizes.spaceBtwSections),
 
-              ///Title & Subtitle
               Text(TTexts.confirmEmail, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
               const SizedBox(height: TSizes.spaceBtwItems),
               Text(email ?? '', style: Theme.of(context).textTheme.labelLarge, textAlign: TextAlign.center),
@@ -48,7 +45,6 @@ class VerifyEmailScreen extends StatelessWidget {
               Text(TTexts.confirmEmailSubTitle, style: Theme.of(context).textTheme.labelMedium, textAlign: TextAlign.center),
               const SizedBox(height: TSizes.spaceBtwSections),
 
-              ///Buttons
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

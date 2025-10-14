@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:medicare/common/color_extension.dart';
 import 'package:medicare/screen/login/on_boarding_screen.dart';
 import 'package:medicare/screen/login/select_city_screen.dart';
@@ -19,21 +21,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
 
-    load();
-
-  }
-
-  void load() async{
-    await Future.delayed(const Duration(seconds: 3));
     loadNextScreen();
+
   }
 
-  void loadNextScreen() {
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
-            (_) => false);
+
+  void loadNextScreen() async {
+    await Future.delayed(const Duration(seconds: 3));
+
+    Get.off(() => const OnBoardingScreen());
   }
+
 
   @override
   Widget build(BuildContext context) {
