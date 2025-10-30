@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TColor {
   static Color get primary => const Color(0xff5976EF);
@@ -11,11 +12,6 @@ class TColor {
   static Color get placeholder => const Color(0xffA3A3A3);
   static Color get titleText => const Color(0xff656565);
   static Color get black => const Color(0xff000000);
-  static const Color dark = Color(0xFF272727);
-  static const Color darkerGrey = Color(0xFF4F4F4F);
-  static const Color grey = Color(0xFFE0E0E0);
-  static const Color white = Color(0xFFFFFFFF);
-
 
   static Color get rate => const Color(0xffDE6732);
   static Color get rateInActive => const Color(0xff7B7B7B);
@@ -28,12 +24,14 @@ class TColor {
 }
 
 extension HexColor on Color {
+  /// String is in the format "aabbcc" or "ffaabbcc" with an optional leading "#".
   static Color fromHex(String hexString) {
     final buffer = StringBuffer();
     if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
     buffer.write(hexString.replaceFirst('#', ''));
     return Color(int.parse(buffer.toString(), radix: 16));
   }
+  /// Prefixes a hash sign if [leadingHashSign] is set to `true` (default is `true`).
   String toHex({bool leadingHashSign = true}) => '${leadingHashSign ? '#' : ''}'
       '${alpha.toRadixString(16).padLeft(2, '0')}'
       '${red.toRadixString(16).padLeft(2, '0')}'
@@ -55,3 +53,10 @@ extension AppContext on BuildContext {
   }
 }
 
+extension DateTimeExtension on DateTime {
+
+  String get date{
+    return DateFormat('yyyy/MM/dd').format(this);
+  }
+
+}

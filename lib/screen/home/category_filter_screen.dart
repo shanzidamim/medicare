@@ -32,7 +32,7 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
           "Heart Issue",
           style: TextStyle(
             color: TColor.primaryTextW,
-            fontSize: 22,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -65,7 +65,7 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 hintText: "Search Heart Specialist",
-                hintStyle: TextStyle(color: TColor.secondaryText, fontSize: 16),
+                hintStyle: TextStyle(color: TColor.secondaryText, fontSize: 14),
                 prefixIcon: Icon(
                   Icons.search,
                   color: TColor.secondaryText,
@@ -89,7 +89,7 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 hintText: "Select Area",
-                hintStyle: TextStyle(color: TColor.secondaryText, fontSize: 16),
+                hintStyle: TextStyle(color: TColor.secondaryText, fontSize: 14),
                 prefixIcon: Icon(
                   Icons.location_on,
                   color: TColor.secondaryText,
@@ -97,9 +97,67 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
               ),
             ),
           ),
+          InkWell(
+            onTap: () async {
+              var results = await showCalendarDatePicker2Dialog(
+                context: context,
+                config: CalendarDatePicker2WithActionButtonsConfig(
+                  firstDayOfWeek: 1,
+                  calendarType: CalendarDatePicker2Type.single,
+                  selectedDayTextStyle: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w700),
+                  selectedDayHighlightColor: TColor.primary,
+                  centerAlignModePicker: true,
+                  customModePickerIcon: const SizedBox(),
+                ),
+                dialogSize: const Size(325, 400),
+                value: [],
+                borderRadius: BorderRadius.circular(15),
+              );
 
+              if (results != null) {
+                setState(() {
+                  selectDate = results.first;
+                });
+              }
+            },
+            child: Container(
+                margin:
+                const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 5,
+                          offset: Offset(0, 3))
+                    ]),
+                alignment: Alignment.center,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.date_range,
+                      color: TColor.secondaryText,
+                    ),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    Text(
+                      selectDate?.date ?? "Select Date",
+                      style: TextStyle(
+                        color: selectDate == null
+                            ? TColor.secondaryText
+                            : TColor.primaryText,
+                      ),
+                    ),
+                  ],
+                )),
+          ),
           const SizedBox(
-            height: 20,
+            height: 40,
           ),
           InkWell(
             onTap: () {
@@ -118,7 +176,7 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
                 "Search",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),

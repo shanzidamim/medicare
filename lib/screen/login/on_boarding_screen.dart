@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:medicare/common/color_extension.dart';
-import 'package:medicare/screen/login/widgets/login.dart';
+
+import '../../common/color_extension.dart';
+import 'login_screen.dart';
 
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
@@ -28,157 +29,153 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            PageView.builder(
-                controller: controller,
-                itemCount: pageArr.length,
-                onPageChanged: (page) {
-                  setState(() {
-                    selectPage = page;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  var obj = pageArr[index];
-      
-                  return Column(
-                    children: [
-                      SizedBox(
-                        height: context.width * 0.4,
-                      ),
-                      Image.asset(
-                        obj["img"],
-                        width: context.width * 0.70,
-                      ),
-      
-                      Text(
-                        obj["title"],
-                        style: TextStyle(
-                          color: TColor.primary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      Text(
-                        obj["subtitle"],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: TColor.black,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-      
-      
-                    ],
-                  );
-                }),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: context.width * 0.08,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-      
-                      InkWell(
-                        onTap: () {
-                          actionNextScreen();
-                        },
-      
-                        child: Container(
-                          width: 80,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(color: TColor.primary, width: 1),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            "Skip",
-                            style: TextStyle(
-                              color: TColor.primary,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    if (selectPage < pageArr.length - 1) {
-                      setState(() {
-                        selectPage += 1;
-                        controller.animateToPage(selectPage,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.bounceInOut);
-                      });
-                    } else {
-                      // Last Page Next Button Press
-                      actionNextScreen();
-                    }
-                  },
-                  child: Container(
-                    width: 120,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: TColor.primary,
-                      borderRadius: BorderRadius.circular(5),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          PageView.builder(
+              controller: controller,
+              itemCount: pageArr.length,
+              onPageChanged: (page) {
+                setState(() {
+                  selectPage = page;
+                });
+              },
+              itemBuilder: (context, index) {
+                var obj = pageArr[index];
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: context.width * 0.4,
                     ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      "Next",
+                    Image.asset(
+                      obj["img"],
+                      width: context.width * 0.50,
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Text(
+                      obj["title"],
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
+                        color: TColor.primary,
+                        fontSize: 20,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Text(
+                      obj["subtitle"],
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: TColor.black,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    )
+                  ],
+                );
+              }),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: context.width * 0.2,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        actionNextScreen();
+                      },
+                      child: Container(
+                        width: 80,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(color: TColor.primary, width: 1),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "Skip",
+                          style: TextStyle(
+                            color: TColor.primary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: () {
+                  if (selectPage < pageArr.length - 1) {
+                    setState(() {
+                      selectPage += 1;
+                      controller.animateToPage(selectPage,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.bounceInOut);
+                    });
+                  } else {
+                    // Last Page Next Button Press
+                    actionNextScreen();
+                  }
+                },
+                child: Container(
+                  width: 120,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: TColor.primary,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Next",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                SizedBox(
-                  height: context.width * 0.2,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: pageArr.map((obj) {
-                    var index = pageArr.indexOf(obj);
-      
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      height: 10,
-                      width: 10,
-                      decoration: BoxDecoration(
-                        color:
-                        index == selectPage ? TColor.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: TColor.primary, width: 1),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(
-                  height: 20,
-                ),
-              ],
-            )
-          ],
-        ),
+              ),
+              SizedBox(
+                height: context.width * 0.3,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: pageArr.map((obj) {
+                  var index = pageArr.indexOf(obj);
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    height: 10,
+                    width: 10,
+                    decoration: BoxDecoration(
+                      color:
+                      index == selectPage ? TColor.primary : Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(color: TColor.primary, width: 1),
+                    ),
+                  );
+                }).toList(),
+              ),
+              SizedBox(
+                height: context.width * 0.2,
+              ),
+            ],
+          )
+        ],
       ),
     );
 

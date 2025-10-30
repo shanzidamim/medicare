@@ -9,6 +9,7 @@ import '../../common/color_extension.dart';
 import '../../common_widget/section_row.dart';
 import 'category_filter_screen.dart';
 import 'doctor_cell.dart';
+import 'doctor_profile_screen.dart';
 
 class HomeTabScreen extends StatefulWidget {
   const HomeTabScreen({super.key});
@@ -32,24 +33,25 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
 
   List nearDoctorArr = [
     {
-      "name": "Dr. Sharif Ahmed",
-      "degree": "MBBS, M.Phil (Radiotherapy)",
-      "image": "assets/image/Dr Sharif.jpg",
-    },
-    {
-      "name": "Dr. Arif Ahmed Mohiuddin",
-      "degree": "MBBS, MS (Cardiothoracic Surgery)",
-      "image": "assets/image/dr.arifAhmed.jpg",
-    },
-    {
       "name": "Dr. Abu Mohammed Shafique",
       "degree": "MBBS, MD (Cardiology)",
-      "image": "assets/image/dr.abuShafique.jpg",
+      "image": "assets/image/doctor_image.png",
+    },
+    {
+      "name": "Dr. Sharif Ahmed",
+      "degree": "MBBS, M.Phil (Radiotherapy)",
+      "image": "assets/image/doctor_image.png",
     },
     {
       "name": "Dr. Arif Ahmed Mohiuddin",
       "degree": "MBBS, MS (Cardiothoracic Surgery)",
-      "image": "assets/image/dr.arifAhmed.jpg",
+      "image": "assets/image/doctor_image.png",
+    },
+
+    {
+      "name": "Dr. Arif Ahmed Mohiuddin",
+      "degree": "MBBS, MS (Cardiothoracic Surgery)",
+      "image": "assets/image/doctor_image.png",
     },
   ];
 
@@ -57,17 +59,17 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
     {
       "name": "World Mart Pharmacy",
       "address": "7 No., Mannan Steel Corporation, Dhaka - Mymensingh Rd",
-      "image": "assets/image/M1.webp",
+      "image": "assets/image/medical_shop.png",
     },
     {
       "name": "Medicine Point",
       "address": "House 52 Ranavola Main Rd, Dhaka 1230",
-      "image": "assets/image/M2.jpeg",
+      "image": "assets/image/medical_shop.png",
     },
     {
       "name": "Healthcare Pharmaceuticals",
       "address": "28 Road No. 1, Dhaka 1230",
-      "image": "assets/image/M3.jpeg",
+      "image": "assets/image/medical_shop.png",
     },
   ];
 
@@ -136,53 +138,41 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
               ),
             ),
             SectionRow(title: "Doctors near by you", onPressed: () {}),
-
             SizedBox(
               height: 220,
               child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return DoctorCell(
-                    obj: nearDoctorArr[index],
-                    onPressed: () {},
-                  );
-                },
-
-                separatorBuilder: (context, index) => const SizedBox(width: 20),
-                itemCount: nearDoctorArr.length,
-              ),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    return DoctorCell(obj: nearDoctorArr[index] , onPressed: (){
+                      context.push( const DoctorProfileScreen() );
+                    });
+                  },
+                  separatorBuilder: (context, index) => const SizedBox(
+                    width: 20,
+                  ),
+                  itemCount: nearDoctorArr.length),
             ),
-
-            SectionRow(
-              title: "Medical Shop near by you",
-              onPressed: () {
-                context.push(const MedicalShopListScreen());
-              },
-            ),
+            SectionRow(title: "Medical Shop near by you", onPressed: () {
+              context.push( const MedicalShopListScreen() );
+            }),
             SizedBox(
               height: 220,
               child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return ShopCell(
-                    obj: nearShopArr[index],
-                    onPressed: () {
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    return ShopCell(
+                        obj: nearShopArr[index], onPressed: () {
                       context.push(const MedicalShopProfileScreen());
-                    },
-                  );
-                },
-
-                separatorBuilder: (context, index) => const SizedBox(width: 20),
-                itemCount: nearShopArr.length,
-              ),
+                    });
+                  },
+                  separatorBuilder: (context, index) => const SizedBox(
+                    width: 20,
+                  ),
+                  itemCount: nearShopArr.length),
             ),
           ],
         ),

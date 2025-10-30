@@ -17,7 +17,7 @@ class DoctorRow extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: Image.asset(
-              "assets/image/dr.abuShafique.jpg",
+              "assets/image/doctor_image.png",
               width: 80,
               height: 80,
               fit: BoxFit.cover,

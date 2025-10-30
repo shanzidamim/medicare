@@ -1,26 +1,37 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+
+import 'package:medicare/screen/login/splash_screen.dart';
 
 
-import 'app.dart';
-import 'data/repositories.authentication/authentication_repository.dart';
-import 'firebase_options.dart';
+import 'common/color_extension.dart';
+import 'common/globs.dart';
 
 
 
-void main() async {
-  final WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  ///--GetX local storage
-  await GetStorage.init();
-  /// Await native splash
-
-  /// Initialize firebase & authentication repository
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then(
-        (FirebaseApp value) => Get.put(AuthenticationRepository()),
-  );
-  runApp(MyApp());
+void main() {
+  runApp(const MyApp());
 }
 
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: Globs.appName,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: "Poppins",
+        scaffoldBackgroundColor: TColor.bg,
+        appBarTheme:  AppBarTheme(
+            elevation: 0,
+            backgroundColor: TColor.primary
+        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: TColor.primary),
+        useMaterial3: false,
+      ),
+      home: const SplashScreen(),
+    );
+  }
+}
