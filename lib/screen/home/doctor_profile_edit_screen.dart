@@ -1,0 +1,188 @@
+import 'package:flutter/material.dart';
+import 'package:medicare/common/color_extension.dart';
+import 'package:medicare/services/api_service.dart';
+
+import '../shared_prefs_helper.dart';
+
+
+class DoctorProfileEditScreen extends StatefulWidget {
+  const DoctorProfileEditScreen({super.key});
+
+  @override
+  State<DoctorProfileEditScreen> createState() => _DoctorProfileEditScreenState();
+}
+
+class _DoctorProfileEditScreenState extends State<DoctorProfileEditScreen> {
+  final _form = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _contact = TextEditingController();
+  final _degree = TextEditingController();
+  final _specialty = TextEditingController();
+  final _clinic = TextEditingController();
+  final _address = TextEditingController();
+  final _experience = TextEditingController();
+  final _fees = TextEditingController();
+  final _visitDays = TextEditingController();
+  final _visitTime = TextEditingController();
+
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctor();
+  }
+
+  Future<void> _loadDoctor() async {
+    final session = await SPrefs.readSession();
+    if (session == null) return;
+
+    final userId = session['user_id'];
+    try {
+      final res = await ApiService().getDoctorProfile(userId);
+      if (res['status'] == true && res['data'] != null) {
+        final d = res['data'];
+        setState(() {
+          _name.text = d['full_name'] ?? '';
+          _contact.text = d['contact'] ?? '';
+          _degree.text = d['degrees'] ?? '';
+          _specialty.text = d['specialty_detail'] ?? '';
+          _clinic.text = d['clinic_or_hospital'] ?? '';
+          _address.text = d['address'] ?? '';
+          _experience.text = d['years_experience']?.toString() ?? '';
+          _fees.text = d['fees']?.toString() ?? '';
+          _visitDays.text = d['visit_days'] ?? '';
+          _visitTime.text = d['visiting_time'] ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading doctor profile: $e");
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_form.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    try {
+      final session = await SPrefs.readSession();
+      final userId = session?['user_id'];
+
+      final payload = {
+        'doctor_id': userId,
+        'full_name': _name.text.trim(),
+        'contact': _contact.text.trim(),
+        'degrees': _degree.text.trim(),
+        'specialty_detail': _specialty.text.trim(),
+        'clinic_or_hospital': _clinic.text.trim(),
+        'address': _address.text.trim(),
+        'years_experience': _experience.text.trim(),
+        'fees': _fees.text.trim(),
+        'visit_days': _visitDays.text.trim(),
+        'visiting_time': _visitTime.text.trim(),
+      };
+
+      final res = await ApiService().updateDoctorProfile(payload);
+
+      if (!mounted) return;
+
+      if (res['status'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Doctor profile updated successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Update failed')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Doctor Profile')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _form,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _name,
+                  decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Enter doctor name' : null,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _contact,
+                  decoration: const InputDecoration(labelText: 'Contact', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _degree,
+                  decoration: const InputDecoration(labelText: 'Degree / Qualification', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _specialty,
+                  decoration: const InputDecoration(labelText: 'Specialty Detail', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _clinic,
+                  decoration: const InputDecoration(labelText: 'Clinic / Hospital', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _address,
+                  decoration: const InputDecoration(labelText: 'Address', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _experience,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Years of Experience', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _fees,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Consultation Fees', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _visitDays,
+                  decoration: const InputDecoration(labelText: 'Visit Days', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _visitTime,
+                  decoration: const InputDecoration(labelText: 'Visiting Time', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: _saving ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColor.primary,
+                    minimumSize: const Size(120, 45),
+                  ),
+                  child: _saving
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Save', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

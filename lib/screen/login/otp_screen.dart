@@ -1,129 +1,94 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
-import 'package:medicare/screen/login/verified_screen.dart';
+/*import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
+import '../../utils/user_storage.dart';
+import 'verified_screen.dart';
 
-import '../../common/color_extension.dart';
-
-class OTPScreen extends StatefulWidget {
-  const OTPScreen({super.key});
+class OtpScreen extends StatefulWidget {
+  final int userId;
+  const OtpScreen({super.key, required this.userId});
 
   @override
-  State<OTPScreen> createState() => _OTPScreenState();
+  State<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OTPScreenState extends State<OTPScreen> {
+class _OtpScreenState extends State<OtpScreen> {
+  final TextEditingController otpController = TextEditingController();
+  bool isVerifying = false;
+
+  Future<void> verifyOtp() async {
+    if (otpController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter OTP")),
+      );
+      return;
+    }
+
+    setState(() => isVerifying = true);
+    try {
+      final response =
+      print("Backend response: ${response.data}");
+
+      if (!mounted) return;
+      if (response.data['status']) {
+        final token = response.data['data']['auth_token'];
+        await UserStorage.saveUser(token, widget.userId);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Verification Successful!")),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const VerifiedScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response.data['message'] ?? "Invalid OTP")),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error verifying OTP: $e")),
+      );
+    }
+    if (mounted) setState(() => isVerifying = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: SizedBox(
-          width: context.width,
-          height: context.height,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                height: context.width * 0.3,
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              "Enter Verification Code",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: otpController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "6-digit code",
               ),
-              Image.asset(
-                "assets/image/splash_logo2.png",
-                width: context.width * 0.33,
-              ),
-              SizedBox(
-                height: context.width * 0.05,
-              ),
-              Text(
-                "Enter Verification code",
-                style: TextStyle(
-                  color: TColor.primary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Text(
-                "Enter Six digit code that send to your\nMobile",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: TColor.primaryText,
-                  fontSize: 14,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 30),
-                child: OtpTextField(
-                  numberOfFields: 6,
-                  borderColor: TColor.placeholder,
-                  focusedBorderColor: TColor.primary,
-                  obscureText: false,
-                  textStyle: const TextStyle(
-                    color: Color(0xff43C73D),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  showFieldAsBox: false,
-                  borderWidth: 3.0,
-                  onCodeChanged: (value) {},
-                  onSubmit: (value) {},
-                ),
-              ),
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: InkWell(
-                  onTap: () {
-                    context.push( const VerifiedScreen() );
-                  },
-                  child: Container(
-                    width: double.maxFinite,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: TColor.primary,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      "Continue",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      "Did not Receive code?",
-                      style: TextStyle(
-                        color: TColor.primaryText,
-                        fontSize: 12,
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {},
-                      child: Text(
-                        " Resend it.",
-                        style: TextStyle(
-                          color: TColor.primary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: isVerifying ? null : verifyOtp,
+              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
+              child: isVerifying
+                  ? const CircularProgressIndicator()
+                  : const Text("Continue"),
+            ),
+          ],
         ),
       ),
     );
   }
-}
+}*/

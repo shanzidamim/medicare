@@ -1,76 +1,99 @@
 import 'package:flutter/material.dart';
-
-import '../../common/color_extension.dart';
+import 'package:medicare/common/color_extension.dart';
+import 'package:medicare/services/api_service.dart';
 import 'doctor_profile_screen.dart';
 import 'doctor_row.dart';
 
 class DoctorsListScreen extends StatefulWidget {
-  const DoctorsListScreen({super.key});
+  final int selectedDivisionId;
+  final String selectedDivisionName;
+  final Map<String, dynamic> selectedCategory;
+  final int currentUserId;
+
+  const DoctorsListScreen({
+    super.key,
+    required this.selectedDivisionId,
+    required this.selectedDivisionName,
+    required this.selectedCategory,
+    required this.currentUserId,
+  });
 
   @override
   State<DoctorsListScreen> createState() => _DoctorsListScreenState();
 }
 
 class _DoctorsListScreenState extends State<DoctorsListScreen> {
+  final ApiService _api = ApiService();
+  List doctors = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctors();
+  }
+
+  Future<void> _loadDoctors() async {
+    setState(() => isLoading = true);
+    try {
+      doctors = await _api.getDoctorsByDivisionAndCategory(
+        widget.selectedDivisionId,
+        widget.selectedCategory['id'],
+      );
+    } catch (_) {}
+    setState(() => isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: false,
-        leading: IconButton(
-          onPressed: () {
-            context.pop();
-          },
-          icon: const Icon(
-            Icons.close,
-            color: Colors.white,
-            size: 25,
-          ),
-        ),
+        backgroundColor: TColor.primary,
+        centerTitle: true,
         title: Text(
-          "Doctors List",
-          style: TextStyle(
-            color: TColor.primaryTextW,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
+          widget.selectedCategory['category_name'] ?? "Doctors List",
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
         ),
       ),
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Container(
-            height: 35,
-            decoration: BoxDecoration(
-              color: TColor.primary,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(15),
-                bottomRight: Radius.circular(15),
-              ),
-            ),
+      body: Column(children: [
+        Container(
+          width: double.infinity,
+          color: TColor.primary,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+          child: Text("Division: ${widget.selectedDivisionName}",
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
           ),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(
-                vertical: 20,
-                horizontal: 20,
-              ),
-              itemBuilder: (context, index) {
-                return  DoctorRow(
-                  onPressed: (){
-                    context.push( const DoctorProfileScreen() );
-                  },
-                );
-              },
-              separatorBuilder: (context, index) => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 15),
-                child: Divider(color: Colors.black12, height: 1),
-              ),
-              itemCount: 20,
-            ),
-          )
-        ],
-      ),
+        ),
+        Expanded(
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : doctors.isEmpty
+              ? const Center(child: Text("No doctors found"))
+              : ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            itemCount: doctors.length,
+            itemBuilder: (context, index) {
+              final doctor = doctors[index];
+              return DoctorRow(
+                doctor: doctor,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DoctorProfileScreen(
+                        doctor: doctor,
+                        currentUserId: widget.currentUserId,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+            separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.black12),
+          ),
+        ),
+      ]),
     );
   }
 }

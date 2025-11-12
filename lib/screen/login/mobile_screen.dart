@@ -1,8 +1,8 @@
-import 'package:fl_country_code_picker/fl_country_code_picker.dart';
 import 'package:flutter/material.dart';
-
 import '../../common/color_extension.dart';
-import 'otp_screen.dart';
+import '../../services/api_service.dart';
+import '../home/home_tab_screen.dart';
+import '../shared_prefs_helper.dart';
 
 class MobileScreen extends StatefulWidget {
   const MobileScreen({super.key});
@@ -12,148 +12,145 @@ class MobileScreen extends StatefulWidget {
 }
 
 class _MobileScreenState extends State<MobileScreen> {
-  FlCountryCodePicker countryCodePicker = const FlCountryCodePicker();
-  late CountryCode countryCode;
+  final TextEditingController mobileController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    countryCode = countryCodePicker.countryCodes
-        .firstWhere((element) => element.name == "India");
+  Future<void> loginUser() async {
+    if (mobileController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter mobile and password")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final response = await ApiService().login(
+        mobileCode: "+880",
+        mobile: mobileController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      if (!mounted) return;
+      final data = response.data;
+
+      if (data['status'] == true) {
+        final user = data['data'];
+        final int userId = user['user_id'];
+        final int userType = user['user_type'];
+        final String token = user['auth_token'] ?? '';
+        final String divisionName = user['division_name'] ?? 'Dhaka';
+
+        // ✅ Save session using named parameters (NOT map)
+        await SPrefs.saveSession(
+          userId: userId,
+          userType: userType,
+          token: token,
+          divisionName: divisionName,
+        );
+
+        // ✅ Set access token globally
+        ApiService().setAccessToken(token);
+
+        // ✅ Navigate based on user type
+        if (userType == 3) {
+          // Medical Shop
+          Navigator.pushReplacementNamed(context, '/shopProfileEdit');
+        } else {
+          // User / Doctor → go to home
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HomeTabScreen(
+                selectedDivision: divisionName,
+                currentUserId: userId,
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Login failed")),
+        );
+      }
+    } catch (e) {
+      debugPrint("❌ Login error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error connecting to server")),
+      );
+    }
+
+    if (mounted) setState(() => isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: SizedBox(
-          width: context.width,
-          height: context.height,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                height: context.width * 0.3,
-              ),
-              Image.asset(
-                "assets/image/splash_logo2.png",
-                width: context.width * 0.33,
-              ),
-              SizedBox(
-                height: context.width * 0.05,
-              ),
-              Text(
-                "Enter Mobile Number",
-                style: TextStyle(
-                  color: TColor.primary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const Text(
+                  "Login to Medicare",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Text(
-                "The  verification code will send to the\nnumber",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: TColor.primaryText,
-                  fontSize: 14,
-                ),
-              ),
-              Container(
-                margin:
-                const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-                height: 45,
-                width: double.maxFinite,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(
-                    color: TColor.placeholder,
-                    width: 1,
+                const SizedBox(height: 25),
+
+                // 🔹 Mobile Field
+                TextField(
+                  controller: mobileController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    prefixText: "+880 ",
+                    border: OutlineInputBorder(),
+                    labelText: "Mobile Number",
                   ),
                 ),
-                child: Row(
-                  children: [
-                    InkWell(
-                      onTap: () async {
-                        final code = await countryCodePicker.showPicker(context: context);
 
-                        if (code != null) {
-                          countryCode = code;
-                          setState(() {
+                const SizedBox(height: 20),
 
-                          });
-                        }
-                      },
-                      child: Container(
-                        height: 45,
-                        width: 70,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(
-                            color: TColor.placeholder,
-                            width: 1,
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          countryCode.dialCode,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: TColor.primaryText,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 15,
-                    ),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: "1534529873",
-                          hintStyle: TextStyle(
-                            color: TColor.placeholder,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
+                // 🔹 Password Field
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: "Password",
+                  ),
                 ),
-              ),
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: InkWell(
-                  onTap: () {
-                    context.push( const OTPScreen() );
+
+                const SizedBox(height: 30),
+
+                // 🔹 Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : loginUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: TColor.primary,
+                    ),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Login"),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                // 🔹 Register Link
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/register');
                   },
-                  child: Container(
-                    width: double.maxFinite,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: TColor.primary,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      "Continue",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  child: const Text("Create a new account"),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

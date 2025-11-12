@@ -1,445 +1,290 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_stars/flutter_rating_stars.dart';
-
-import '../../common/color_extension.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:medicare/common/color_extension.dart';
+import 'package:medicare/services/api_service.dart';
 import 'appointment_booking.dart';
 import 'chat/chat_messege.dart';
 
 class DoctorProfileScreen extends StatefulWidget {
-  const DoctorProfileScreen({super.key});
+  final Map<String, dynamic> doctor;
+  final int currentUserId;
+
+  const DoctorProfileScreen({
+    super.key,
+    required this.doctor,
+    required this.currentUserId,
+  });
 
   @override
   State<DoctorProfileScreen> createState() => _DoctorProfileScreenState();
 }
 
 class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
+  final ApiService _api = ApiService();
+  List<dynamic> _feedbacks = [];
+  final TextEditingController _fbCtrl = TextEditingController();
+  bool _loadingFb = true;
+  bool _addingFb = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFeedbacks();
+  }
+
+  Future<void> _loadFeedbacks() async {
+    setState(() => _loadingFb = true);
+    final id = (widget.doctor['id'] as int?) ?? 0;
+    _feedbacks = id == 0 ? [] : await _api.getDoctorFeedbacks(id);
+    setState(() => _loadingFb = false);
+  }
+
+  Future<void> _addFeedback() async {
+    final txt = _fbCtrl.text.trim();
+    if (txt.isEmpty) return;
+    setState(() => _addingFb = true);
+    final ok = await _api.addDoctorFeedback(
+      doctorId: widget.doctor['id'] as int,
+      userId: widget.currentUserId,
+      message: txt,
+    );
+    if (ok) {
+      _fbCtrl.clear();
+      _loadFeedbacks();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Feedback submitted')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to submit feedback')),
+      );
+    }
+    setState(() => _addingFb = false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final d = widget.doctor;
+    final name = d['full_name'] ?? "Unknown Doctor";
+    final degrees = d['degrees'] ?? "";
+    final specialty = d['specialty_detail'] ?? "";
+    final experience = d['years_experience']?.toString() ?? "0";
+    final visitDays = d['visit_days'] ?? "Not available";
+    final visitingTime = d['visiting_time'] ?? "Not available";
+    final chamber = d['clinic_or_hospital'] ?? "Not specified";
+    final address = d['address'] ?? "Not provided";
+    final contact = d['contact']?.toString() ?? "";
+    final imageUrl = d['image_url'] ?? "";
+    final rating = double.tryParse(d['rating']?.toString() ?? "4.0") ?? 4.0;
+    final doctorId = (d['id'] as int?) ?? 0;
+
     return SafeArea(
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
-          centerTitle: false,
           leading: IconButton(
-            onPressed: () {
-              // If you use go_router's context.pop(), revert this line.
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close, color: Colors.white, size: 25),
           ),
-          title: Text(
-            "Doctor's Profile",
-            style: TextStyle(
-              color: TColor.primaryTextW,
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-            ),
+          title: Text("Doctor's Profile",
+            style: TextStyle(color: TColor.primaryTextW, fontSize: 22, fontWeight: FontWeight.w600),
           ),
         ),
-        backgroundColor: Colors.white,
         body: SingleChildScrollView(
           child: Column(
             children: [
-              // ================== Header Section ==================
+              // TOP
               Stack(
                 alignment: Alignment.topCenter,
                 children: [
                   Container(
-                    height: 150,
+                    height: 160,
                     decoration: BoxDecoration(
                       color: TColor.primary,
                       borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(15),
-                        bottomRight: Radius.circular(15),
+                        bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20),
                       ),
                     ),
                   ),
                   Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(
-                        left: 20, right: 20, top: 80, bottom: 8),
-                    padding: const EdgeInsets.only(
-                        left: 20, right: 20, top: 80, bottom: 8),
+                    margin: const EdgeInsets.only(top: 80, left: 40, right: 40),
+                    padding: const EdgeInsets.only(top: 80, bottom: 15),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          "Assoc. Prof. Dr. Bijoy Dutta",
-                          style: TextStyle(
-                            color: TColor.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text(name, textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 6),
-                        Text(
-                          "Interventional Cardiology\nMBBS (DMC), MD (Cardiology), FSCAI (USA)",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: TColor.secondaryText,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Text(specialty, style: TextStyle(color: TColor.secondaryText, fontSize: 14)),
+                        Text(degrees, textAlign: TextAlign.center, style: TextStyle(color: TColor.secondaryText, fontSize: 13)),
                         const SizedBox(height: 6),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IgnorePointer(
-                              ignoring: true,
-                              child: RatingStars(
-                                value: 4.0,
-                                starCount: 5,
-                                starSize: 14,
-                                valueLabelVisibility: false,
-                                starSpacing: 2,
-                                starOffColor: const Color(0xff7c7c7c),
-                                starColor: const Color(0xffDE6732),
-                              ),
+                            RatingStars(
+                              value: rating, starCount: 5, starSize: 14,
+                              starOffColor: TColor.placeholder, starColor: const Color(0xffDE6732),
+                              valueLabelVisibility: false, onValueChanged: (_) {},
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              "(4.0)",
-                              style: TextStyle(
-                                color: TColor.secondaryText,
-                                fontSize: 12,
-                              ),
-                            ),
+                            Text("(${rating.toStringAsFixed(1)})",
+                                style: TextStyle(color: TColor.secondaryText, fontSize: 12)),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "9 Years Experience",
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 14,
-                          ),
-                        ),
+                        const SizedBox(height: 6),
+                        Text("$experience Years Experience",
+                            style: const TextStyle(color: Colors.black54, fontSize: 13)),
                       ],
                     ),
                   ),
-                  Container(
-                    width: 120,
-                    height: 120,
-                    margin: const EdgeInsets.only(top: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 4),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 2,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Image.asset(
-                      "assets/image/doctor_image.png",
-                      fit: BoxFit.cover,
+                  Positioned(
+                    top: 20,
+                    child: Container(
+                      width: 110, height: 110,
+                      decoration: BoxDecoration(
+                        color: Colors.white, borderRadius: BorderRadius.circular(10),
+                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2))],
+                      ),
+                      child: imageUrl.toString().isNotEmpty
+                          ? Image.network(imageUrl, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Image.asset("assets/image/default_doctor.png"))
+                          : Image.asset("assets/image/default_doctor.png"),
                     ),
                   ),
                 ],
               ),
 
-              // ================== Info Section ==================
+              // DETAILS / FEEDBACK
               Container(
-                width: double.infinity,
-                margin:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 10),
-                  ],
+                  color: Colors.white, borderRadius: BorderRadius.circular(15),
+                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- Visiting Info ---
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Visit Days",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Sat, Tue, Wed & Thu",
-                            style: TextStyle(
-                              color: TColor.unselect,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            "Visiting Time",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "07:00pm - 09:00pm",
-                            style: TextStyle(
-                              color: TColor.unselect,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            "Chamber",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Labaid Diagnostic, Malibagh",
-                            style: TextStyle(
-                              color: TColor.unselect,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                    _info("Visit Days", visitDays),
+                    _info("Visiting Time", visitingTime),
+                    _info("Chamber", chamber),
+
+                    const SizedBox(height: 6),
+                    const Divider(color: Colors.black26, height: 1),
+                    const SizedBox(height: 6),
+
+                    const Text("Feedback", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+
+                    if (_loadingFb)
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 6),
+                          child: Center(child: CircularProgressIndicator()))
+                    else if (_feedbacks.isEmpty)
+                      Padding(padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Text("No feedback yet.", style: TextStyle(color: TColor.unselect)))
+                    else
+                      ListView.separated(
+                        shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (_, i) {
+                          final f = _feedbacks[i];
+                          return Text("• ${f['message'] ?? ''}",
+                              style: TextStyle(color: TColor.primaryText));
+                        },
+                        separatorBuilder: (_, __) => const SizedBox(height: 4),
+                        itemCount: _feedbacks.length,
                       ),
+
+                    const SizedBox(height: 10),
+
+                    // feedback input + actions
+                    Container(
+                      height: 50,
+                      decoration: BoxDecoration(color: const Color(0xffEDEDED), borderRadius: BorderRadius.circular(25)),
+                      child: Row(children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: TextField(
+                              controller: _fbCtrl,
+                              decoration: const InputDecoration(border: InputBorder.none, hintText: "Write feedback…"),
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: _addingFb ? null : _addFeedback,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(color: TColor.primary, borderRadius: BorderRadius.circular(25)),
+                            child: _addingFb
+                                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text("Send", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ]),
                     ),
 
-                    const Divider(color: Colors.black26, height: 1),
-
-                    // --- Experience ---
-
-
-                    const Divider(color: Colors.black26, height: 1),
-
-                    // --- Feedback (kept same design) ---
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Feedback",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => _openChat(doctorId, name),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: TColor.primary),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
+                            child: Text("Chat", style: TextStyle(color: TColor.primary)),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "The service of Assoc. Prof. Dr. Bijoy Dutta and his staff is excellent.",
-                            style: TextStyle(
-                              color: TColor.unselect,
-                              fontSize: 14,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => _openBooking(doctorId),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: TColor.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
+                            child: const Text("Book"),
                           ),
-                          const SizedBox(height: 10),
-                          Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: const Color(0xffEDEDED),
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            child: Row(
-                              children: [
-                                const Expanded(
-                                  child: Text(
-                                    "Give Feedback",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                          const AppointmentBookingScreen(),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        color: TColor.primary,
-                                        borderRadius:
-                                        BorderRadius.circular(25),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: const Text(
-                                        "Book",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
 
+                    const SizedBox(height: 15),
                     const Divider(color: Colors.black26, height: 1),
-
-                    // --- Address ---
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Address",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "House # B65, Chowdhury Para, Malibagh, Dhaka",
-                            style: TextStyle(
-                              color: TColor.unselect,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
+                    _info("Address", address),
+                    const SizedBox(height: 10),
                     const Divider(color: Colors.black26, height: 1),
-
-                    // --- Contact ---
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Contact",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    const SizedBox(height: 10),
+                    const Text("Contact", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.phone, size: 22, color: TColor.primary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            contact.isEmpty ? "Not available" : contact,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.phone,
-                                  size: 22, color: TColor.primary),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  "+8801766662555",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () {},
-                                child: Container(
-                                  width: 30,
-                                  height: 30,
-                                  decoration: BoxDecoration(
-                                    color: TColor.green,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.phone,
-                                    color: Colors.white,
-                                    size: 15,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () {},
-                                child: Container(
-                                  width: 30,
-                                  height: 30,
-                                  decoration: BoxDecoration(
-                                    color: TColor.primary,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.video_call,
-                                    color: Colors.white,
-                                    size: 15,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                      const ChatMessageScreen(),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  width: 30,
-                                  height: 30,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xffF8A370),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.message,
-                                    color: Colors.white,
-                                    size: 15,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        _smallIconBtn(Icons.phone, TColor.green, () {
+                          if (contact.isNotEmpty) {
+                            launchUrl(Uri.parse('tel:$contact'));
+                          }
+                        }),
+                        const SizedBox(width: 6),
+                        _smallIconBtn(Icons.message, const Color(0xffF8A370), () {
+                          _openChat(doctorId, name);
+                        }),
+                      ],
                     ),
                   ],
                 ),
@@ -447,6 +292,57 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _openChat(int doctorId, String doctorName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatMessageScreen(
+          doctorId: doctorId,
+          doctorName: doctorName,
+          currentUserId: widget.currentUserId,
+          doctorAvatar: widget.doctor['image_url']?.toString(),
+        ),
+      ),
+    );
+  }
+
+  void _openBooking(int doctorId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AppointmentBookingScreen(
+          doctorId: doctorId,
+          currentUserId: widget.currentUserId,
+        ),
+      ),
+    );
+  }
+
+  Widget _info(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black)),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(color: TColor.unselect, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget _smallIconBtn(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 30, height: 30,
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: Colors.white, size: 15),
       ),
     );
   }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '../../common/color_extension.dart';
-import '../home/main_tab_screen.dart';
-import 'mobile_screen.dart';
+import 'package:medicare/common/color_extension.dart';
+import 'package:medicare/services/api_service.dart';
+import 'package:medicare/screen/shared_prefs_helper.dart';
+import 'package:medicare/screen/home/main_tab_screen.dart';
+import '../register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,168 +13,168 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _form = GlobalKey<FormState>();
+  final _mobileCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  int _selectedType = 1; // For UI dropdown
+  bool _busy = false;
+
+  Future<void> _doLogin() async {
+    if (!_form.currentState!.validate()) return;
+    setState(() => _busy = true);
+    try {
+      final res = await ApiService().login(
+        mobileCode: '+880',
+        mobile: _mobileCtrl.text.trim(),
+        password: _passCtrl.text.trim(),
+      );
+
+      if (res.data is! Map || res.data['status'] != true) {
+        _snack(res.data['message']?.toString() ?? 'Login failed');
+        setState(() => _busy = false);
+        return;
+      }
+
+      final data = res.data['data'] as Map;
+      final token = data['auth_token']?.toString() ?? '';
+      final userId = int.tryParse('${data['user_id']}') ?? 0;
+      final userType = int.tryParse('${data['user_type']}') ?? _selectedType;
+      final name = data['first_name']?.toString() ?? '';
+
+      await SPrefs.saveSession(
+        token: token,
+        userId: userId,
+        userType: userType,
+        divisionName: 'Dhaka',
+        name: name,
+      );
+
+      ApiService().setAccessToken(token);
+
+      if (!mounted) return;
+
+      // ✅ All user types go to MainTabScreen
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MainTabScreen(
+            initialDivision: 'Dhaka',
+            currentUserId: userId,
+          ),
+        ),
+            (_) => false,
+      );
+    } catch (e) {
+      _snack('Network error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _snack(String m) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            alignment: Alignment.bottomCenter,
+      body: SafeArea(
+        child: Form(
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              Container(
-                width: double.maxFinite,
-                height: context.width * 0.6,
-                decoration: BoxDecoration(
-                  color: TColor.primary,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(context.width),
-                    bottomRight: Radius.circular(context.width),
+              const SizedBox(height: 40),
+              Text(
+                'Welcome',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: TColor.primaryText,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Sign in with your mobile & password',
+                style: TextStyle(color: TColor.secondaryText),
+              ),
+              const SizedBox(height: 24),
+
+              // 🔹 Account type dropdown (for UI only)
+              DropdownButtonFormField<int>(
+                value: _selectedType,
+                items: const [
+                  DropdownMenuItem(value: 1, child: Text('User')),
+                  DropdownMenuItem(value: 2, child: Text('Doctor')),
+                  DropdownMenuItem(value: 3, child: Text('Medical Shop')),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Account type (for UI)',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (v) => setState(() => _selectedType = v ?? 1),
+              ),
+
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _mobileCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Mobile (without +880)',
+                  prefixText: '+880 ',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Enter mobile' : null,
+              ),
+
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                (v == null || v.length < 4) ? 'Minimum 4 characters' : null,
+              ),
+
+              const SizedBox(height: 22),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _busy ? null : _doLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColor.primary,
+                  ),
+                  child: _busy
+                      ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                      : const Text(
+                    'Login',
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Image.asset(
-                  "assets/image/splash_logo1.png",
-                  width: context.width * 0.33,
+
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
                 ),
-              )
+                child: const Text('Create new account'),
+              ),
             ],
           ),
-          const Spacer(),
-          Text(
-            "Welcome",
-            style: TextStyle(
-              color: TColor.primary,
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          Text(
-            "Sign in to continue",
-            style: TextStyle(
-              color: TColor.primaryText,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: InkWell(
-              onTap: () {
-                context.push( const MobileScreen() );
-              },
-              child: Container(
-                width: double.maxFinite,
-                height: 45,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(color: TColor.placeholder, width: 1),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      "assets/image/phone_icon.png",
-                      width: 15,
-                    ),
-                    const SizedBox(
-                      width: 15,
-                    ),
-                    Text(
-                      "Mobile Number",
-                      style: TextStyle(
-                        color: TColor.primaryText,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Text(
-              "Or",
-              style: TextStyle(
-                color: TColor.primaryText,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: InkWell(
-              onTap: () {
-                context.push( const MainTabScreen() );
-              },
-              child: Container(
-                width: double.maxFinite,
-                height: 45,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(color: TColor.placeholder, width: 1),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      "assets/image/google_icon.png",
-                      width: 15,
-                    ),
-                    const SizedBox(
-                      width: 15,
-                    ),
-                    Text(
-                      "Google",
-                      style: TextStyle(
-                        color: TColor.primaryText,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "By signing in , You accepting our",
-                style: TextStyle(
-                    color: TColor.primaryText,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w300),
-              ),
-              InkWell(
-                onTap: () {},
-                child: Text(
-                  " Terms and Conditions",
-                  style: TextStyle(
-                      color: TColor.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w300),
-                ),
-              )
-            ],
-          ),
-          const Spacer(),
-          SizedBox(
-            height: context.width * 0.4,
-          ),
-        ],
+        ),
       ),
     );
   }

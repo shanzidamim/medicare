@@ -1,181 +1,317 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_stars/flutter_rating_stars.dart';
-import 'package:medicare/common_widget/category_button.dart';
-import 'package:medicare/screen/home/medical_shop/medical_shop_list_screen.dart';
-import 'package:medicare/screen/home/medical_shop/medical_shop_profile_screen.dart';
-import 'package:medicare/screen/home/shop_cell.dart';
-
-import '../../common/color_extension.dart';
-import '../../common_widget/section_row.dart';
-import 'category_filter_screen.dart';
+import 'package:medicare/common/color_extension.dart';
+import 'package:medicare/common_widget/section_row.dart';
+import 'package:medicare/services/api_service.dart';
+import 'all_division_doctors_screen.dart';
 import 'doctor_cell.dart';
 import 'doctor_profile_screen.dart';
+import 'medical_shop/medical_shop_list_screen.dart';
+import 'medical_shop/medical_shop_profile_screen.dart';
+import 'shop_cell.dart';
 
 class HomeTabScreen extends StatefulWidget {
-  const HomeTabScreen({super.key});
+  final String selectedDivision;
+  final int currentUserId;
+
+  const HomeTabScreen({
+    super.key,
+    required this.selectedDivision,
+    required this.currentUserId,
+  });
 
   @override
   State<HomeTabScreen> createState() => _HomeTabScreenState();
 }
 
 class _HomeTabScreenState extends State<HomeTabScreen> {
-  List categoryArr = [
-    {"title": "Heart Issue", "image": "assets/image/heart.png"},
-    {"title": "Lung Issue", "image": "assets/image/lung.png"},
-    {"title": "Cancer Issue", "image": "assets/image/cancer.png"},
-    {"title": "Sugar Issue", "image": "assets/image/sugar.png"},
-  ];
+  final ApiService apiService = ApiService();
 
-  List adsArr = [
-    {"image": "assets/image/ad_1.png"},
-    {"image": "assets/image/ad_2.png"},
-  ];
+  List<dynamic> categoryArr = [];
+  List<dynamic> doctorArr = [];
+  bool isLoading = true;
 
-  List nearDoctorArr = [
-    {
-      "name": "Dr. Abu Mohammed Shafique",
-      "degree": "MBBS, MD (Cardiology)",
-      "image": "assets/image/doctor_image.png",
-    },
-    {
-      "name": "Dr. Sharif Ahmed",
-      "degree": "MBBS, M.Phil (Radiotherapy)",
-      "image": "assets/image/doctor_image.png",
-    },
-    {
-      "name": "Dr. Arif Ahmed Mohiuddin",
-      "degree": "MBBS, MS (Cardiothoracic Surgery)",
-      "image": "assets/image/doctor_image.png",
-    },
+  @override
+  void initState() {
+    super.initState();
+    loadInitialData();
+  }
 
-    {
-      "name": "Dr. Arif Ahmed Mohiuddin",
-      "degree": "MBBS, MS (Cardiothoracic Surgery)",
-      "image": "assets/image/doctor_image.png",
-    },
-  ];
+  Future<void> loadInitialData() async {
+    try {
+      final catRes = await apiService.getCategories();
+      await loadDoctors(widget.selectedDivision);
+      if (mounted) {
+        setState(() {
+          categoryArr = catRes;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading home data: $e");
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
-  List nearShopArr = [
-    {
-      "name": "World Mart Pharmacy",
-      "address": "7 No., Mannan Steel Corporation, Dhaka - Mymensingh Rd",
-      "image": "assets/image/medical_shop.png",
-    },
-    {
-      "name": "Medicine Point",
-      "address": "House 52 Ranavola Main Rd, Dhaka 1230",
-      "image": "assets/image/medical_shop.png",
-    },
-    {
-      "name": "Healthcare Pharmaceuticals",
-      "address": "28 Road No. 1, Dhaka 1230",
-      "image": "assets/image/medical_shop.png",
-    },
-  ];
+  Future<void> loadDoctors(String divisionName) async {
+    try {
+      final divRes = await apiService.getDivisions();
+      if (divRes.isEmpty) return;
+      final selectedDivision = divRes.firstWhere(
+            (d) => (d['division_name'] as String)
+            .toLowerCase()
+            .contains(divisionName.toLowerCase()),
+        orElse: () => divRes.first,
+      );
+      final docRes = await apiService.getDoctorsByDivision(selectedDivision['id']);
+      if (mounted) setState(() => doctorArr = docRes);
+    } catch (e) {
+      debugPrint("Error loading doctors: $e");
+    }
+  }
+
+  @override
+  void didUpdateWidget(HomeTabScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDivision != widget.selectedDivision) {
+      loadDoctors(widget.selectedDivision);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 150,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
+            // Categories
+            Padding(
+              padding: const EdgeInsets.only(left: 20, top: 15, bottom: 5),
+              child: Text(
+                "Categories",
+                style: TextStyle(
+                  color: TColor.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                itemBuilder: (context, index) {
-                  var obj = categoryArr[index];
-                  return CategoryButton(
-                    title: obj["title"],
-                    icon: obj["image"],
-                    onPressed: () {
-                      context.push(const CategoryFilterScreen());
-                    },
-                  );
-                },
-                separatorBuilder: (context, index) => const SizedBox(width: 25),
-                itemCount: categoryArr.length,
               ),
             ),
             SizedBox(
-              // color: Colors.red,
-              height: context.width * 0.5,
+              height: 120,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                  horizontal: 20,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: categoryArr.length,
+                separatorBuilder: (context, index) =>
+                const SizedBox(width: 20),
                 itemBuilder: (context, index) {
-                  var obj = adsArr[index];
-
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black12, blurRadius: 1),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        obj["image"],
-                        width: context.width * 0.85,
-                        height: context.width * 0.425,
-                        fit: BoxFit.cover,
+                  var obj = categoryArr[index];
+                  final imageUrl = obj["image_url"] ?? "";
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AllDivisionDoctorsScreen(
+                            divisionId: null,
+                            divisionName: widget.selectedDivision,
+                            selectedCategory: obj,
+                            currentUserId: widget.currentUserId,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 85,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [
+                          BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 3,
+                              offset: Offset(0, 2))
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: imageUrl.startsWith('http')
+                                ? Image.network(
+                              imageUrl,
+                              width: 55,
+                              height: 55,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  Image.asset(
+                                    "assets/image/default_category.png",
+                                    width: 55,
+                                    height: 55,
+                                    fit: BoxFit.contain,
+                                  ),
+                            )
+                                : Image.asset(
+                              imageUrl.isNotEmpty
+                                  ? imageUrl
+                                  : "assets/image/default_category.png",
+                              width: 55,
+                              height: 55,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            obj["category_name"] ?? "",
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: TColor.primaryText,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
-                separatorBuilder: (context, index) => const SizedBox(width: 15),
-                itemCount: adsArr.length,
               ),
             ),
-            SectionRow(title: "Doctors near by you", onPressed: () {}),
+
+            // Banners
             SizedBox(
-              height: 220,
-              child: ListView.separated(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) {
-                    return DoctorCell(obj: nearDoctorArr[index] , onPressed: (){
-                      context.push( const DoctorProfileScreen() );
-                    });
-                  },
-                  separatorBuilder: (context, index) => const SizedBox(
-                    width: 20,
-                  ),
-                  itemCount: nearDoctorArr.length),
+              height: 160,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 10),
+                children: [
+                  _buildBannerItem("assets/image/ad_1.png"),
+                  const SizedBox(width: 15),
+                  _buildBannerItem("assets/image/ad_2.png"),
+                ],
+              ),
             ),
-            SectionRow(title: "Medical Shop near by you", onPressed: () {
-              context.push( const MedicalShopListScreen() );
-            }),
+
+            // Doctors Near
+            SectionRow(
+              title: "Doctors near you (${widget.selectedDivision})",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AllDivisionDoctorsScreen(
+                      divisionId: null,
+                      divisionName: widget.selectedDivision,
+                      currentUserId: widget.currentUserId,
+                    ),
+                  ),
+                );
+              },
+            ),
+            SizedBox(
+              height: 220,
+              child: doctorArr.isEmpty
+                  ? const Center(child: Text("No doctors found"))
+                  : ListView.separated(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 8),
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  var obj = doctorArr[index];
+                  return DoctorCell(
+                    obj: obj,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DoctorProfileScreen(
+                            doctor: obj,
+                            currentUserId: widget.currentUserId,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                separatorBuilder: (context, index) =>
+                const SizedBox(width: 20),
+                itemCount: doctorArr.length,
+              ),
+            ),
+
+            // Medical Shops – Static for now
+            SectionRow(
+              title: "Medical Shop near you",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => MedicalShopListScreen(currentUserId: widget.currentUserId,)),
+                );
+              },
+            ),
             SizedBox(
               height: 220,
               child: ListView.separated(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) {
-                    return ShopCell(
-                        obj: nearShopArr[index], onPressed: () {
-                      context.push(const MedicalShopProfileScreen());
-                    });
-                  },
-                  separatorBuilder: (context, index) => const SizedBox(
-                    width: 20,
-                  ),
-                  itemCount: nearShopArr.length),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 8),
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  var obj = {
+                    "id": 1,
+                    "full_name": "World Mart Pharmacy",
+                    "address":
+                    "7 No., Mannan Steel Corporation, Dhaka - Mymensingh Rd",
+                    "image_url": "assets/image/medical_shop.png",
+                    "timing": "Sat-Fri (8:00am - 11:00pm)",
+                    "contact": "01710-120768",
+                  };
+
+                  return ShopCell(
+                    obj: obj,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MedicalShopProfileScreen(
+                            shop: obj,
+                            currentUserId: widget.currentUserId,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                separatorBuilder: (context, index) =>
+                const SizedBox(width: 20),
+                itemCount: 3,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBannerItem(String imagePath) {
+    return Container(
+      width: 320,
+      height: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.asset(imagePath, fit: BoxFit.cover),
       ),
     );
   }

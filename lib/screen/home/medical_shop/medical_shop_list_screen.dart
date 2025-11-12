@@ -1,31 +1,61 @@
 import 'package:flutter/material.dart';
-
+import 'package:medicare/common/color_extension.dart';
 import 'package:medicare/screen/home/medical_shop/shop_row.dart';
-
-import '../../../common/color_extension.dart';
+import 'package:medicare/screen/home/medical_shop/medical_shop_profile_screen.dart';
+import 'package:medicare/services/api_service.dart';
 
 class MedicalShopListScreen extends StatefulWidget {
-  const MedicalShopListScreen({super.key});
+  final int currentUserId;
+  final String divisionName;
+
+  const MedicalShopListScreen({
+    super.key,
+    this.divisionName = "Dhaka",
+    required this.currentUserId,
+  });
 
   @override
   State<MedicalShopListScreen> createState() => _MedicalShopListScreenState();
 }
 
 class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
+  final ApiService apiService = ApiService();
+  bool isLoading = true;
+  List<dynamic> shopList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShops();
+  }
+
+  Future<void> _loadShops() async {
+    try {
+      final res = await apiService.getMedicalShopsByDivision(widget.divisionName);
+      setState(() {
+        shopList = res;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error loading shops: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         centerTitle: false,
         title: const Text(
           "Medical shop near by you",
           style: TextStyle(
             color: Colors.white,
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -44,18 +74,34 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
             ),
           ),
           Expanded(
-            child: ListView.separated(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : shopList.isEmpty
+                ? const Center(child: Text("No shops found"))
+                : ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               itemBuilder: (context, index) {
-                return ShopRow(onPressed: (){
-
-                }, obj: {});
+                var shop = shopList[index];
+                return ShopRow(
+                  obj: shop,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MedicalShopProfileScreen(
+                          shop: shop,
+                          currentUserId: widget.currentUserId,
+                        ),
+                      ),
+                    );
+                  },
+                );
               },
               separatorBuilder: (context, index) => const Padding(
-                padding:  EdgeInsets.symmetric(vertical: 15),
+                padding: EdgeInsets.symmetric(vertical: 15),
                 child: Divider(color: Colors.black12, height: 1),
               ),
-              itemCount: 20,
+              itemCount: shopList.length,
             ),
           ),
         ],
