@@ -16,8 +16,16 @@ class ShopRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = obj['full_name'] ?? obj['name'] ?? "Medical Shop";
     final address = obj['address'] ?? "Address not available";
-    final rating = double.tryParse(obj['rating']?.toString() ?? "4.0") ?? 4.0;
-    final imageUrl = obj['image_url'] ?? "assets/image/medical_shop.png";
+
+    // ⭐ REAL FEEDBACK COUNT
+    final int feedbackCount = obj['feedback_count'] ?? 0;
+
+    // ⭐ Use rating only if feedback exists
+    final double rating = feedbackCount > 0
+        ? double.tryParse(obj['rating']?.toString() ?? "0") ?? 0.0
+        : 0.0;
+
+    final imageUrl = obj['image_url']?.toString() ?? "";
 
     return InkWell(
       onTap: onPressed,
@@ -26,58 +34,86 @@ class ShopRow extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: imageUrl.startsWith("http")
-                ? Image.network(imageUrl, width: 100, height: 100, fit: BoxFit.cover)
-                : Image.asset(imageUrl, width: 100, height: 100, fit: BoxFit.cover),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    color: TColor.black,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  address,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: TColor.secondaryText,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    IgnorePointer(
-                      ignoring: true,
-                      child: RatingStars(
-                        value: rating,
-                        onValueChanged: (_) {},
-                        starCount: 5,
-                        starSize: 14,
-                        starOffColor: const Color(0xff7c7c7c),
-                        starColor: const Color(0xffDE6732),
-                        valueLabelVisibility: false,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      "(${rating.toStringAsFixed(1)})",
-                      style: TextStyle(color: TColor.secondaryText, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
+            child: imageUrl.isNotEmpty
+                ? Image.network(
+              imageUrl,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Image.asset(
+                "assets/image/medical_shop.png",
+                width: 100,
+                height: 100,
+              ),
+            )
+                : Image.asset(
+              "assets/image/medical_shop.png",
+              width: 100,
+              height: 100,
             ),
           ),
-          Icon(Icons.more_vert, color: TColor.black, size: 26),
+
+          const SizedBox(width: 15),
+
+          Expanded(
+            child: SizedBox(
+              height: 80,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // NAME
+                  Text(
+                    name,
+                    style: TextStyle(
+                      color: TColor.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  // ADDRESS
+                  Text(
+                    address,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: TColor.secondaryText,
+                      fontSize: 13,
+                    ),
+                  ),
+
+                  // ⭐ RATING WITH FEEDBACK COUNT
+                  Row(
+                    children: [
+                      IgnorePointer(
+                        ignoring: true,
+                        child: RatingStars(
+                          value: rating,
+                          starSize: 14,
+                          starColor: const Color(0xffDE6732),
+                          starOffColor: const Color(0xffC4C4C4),
+                          valueLabelVisibility: false,
+                          starCount: 5,
+                        ),
+                      ),
+
+                      const SizedBox(width: 6),
+
+                      // ⭐ Only show (count)
+                      Text(
+                        "($feedbackCount)",
+                        style: TextStyle(
+                          color: TColor.secondaryText,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

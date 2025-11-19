@@ -15,7 +15,8 @@ class MedicalShopListScreen extends StatefulWidget {
   });
 
   @override
-  State<MedicalShopListScreen> createState() => _MedicalShopListScreenState();
+  State<MedicalShopListScreen> createState() =>
+      _MedicalShopListScreenState();
 }
 
 class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
@@ -31,13 +32,26 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
 
   Future<void> _loadShops() async {
     try {
-      final res = await apiService.getMedicalShopsByDivision(widget.divisionName);
+      final list =
+      await apiService.getMedicalShopsByDivision(widget.divisionName);
+
+      // Fix URLs
+      final fixed = list.map((shop) {
+        final img = shop["image_url"]?.toString() ?? "";
+        final full = img.isNotEmpty
+            ? (img.startsWith("http")
+            ? img
+            : "${apiService.baseHost}/$img")
+            : "";
+        return {...shop, "image_url": full};
+      }).toList();
+
       setState(() {
-        shopList = res;
+        shopList = fixed;
         isLoading = false;
       });
     } catch (e) {
-      debugPrint("Error loading shops: $e");
+      debugPrint("Shop load error: $e");
       setState(() => isLoading = false);
     }
   }
@@ -46,65 +60,39 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        title: const Text("Medical shop near you"),
         centerTitle: false,
-        title: const Text(
-          "Medical shop near by you",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Container(
-            height: 20,
-            decoration: BoxDecoration(
-              color: TColor.primary,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-          ),
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : shopList.isEmpty
-                ? const Center(child: Text("No shops found"))
-                : ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              itemBuilder: (context, index) {
-                var shop = shopList[index];
-                return ShopRow(
-                  obj: shop,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MedicalShopProfileScreen(
-                          shop: shop,
-                          currentUserId: widget.currentUserId,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              separatorBuilder: (context, index) => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 15),
-                child: Divider(color: Colors.black12, height: 1),
-              ),
-              itemCount: shopList.length,
-            ),
-          ),
-        ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : shopList.isEmpty
+          ? const Center(child: Text("No shops found"))
+          : ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemBuilder: (_, index) {
+          final shop = shopList[index];
+          return ShopRow(
+            obj: {
+              ...shop,
+              "image_url": shop["image_url"]?.toString() ?? "",
+            },
+
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MedicalShopProfileScreen(
+                    shop: Map<String, dynamic>.from(shop),   // ✅ FIX HERE
+                    currentUserId: widget.currentUserId,
+                  ),
+
+                ),
+              );
+            },
+          );
+        },
+        separatorBuilder: (_, __) => const Divider(),
+        itemCount: shopList.length,
       ),
     );
   }

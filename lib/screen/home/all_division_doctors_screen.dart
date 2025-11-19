@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:medicare/common/color_extension.dart';
 import 'package:medicare/services/api_service.dart';
+import '../shared_prefs_helper.dart';
 import 'doctor_profile_screen.dart';
 import 'doctor_row.dart';
 
@@ -69,6 +70,16 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
         );
       }
 
+      // ✅ Add dynamic image URL fix for each doctor
+      for (var d in doctors) {
+        final imageUrl = d['image_url']?.toString() ?? '';
+        if (imageUrl.isNotEmpty) {
+          d['image_url'] = imageUrl.startsWith('http')
+              ? imageUrl
+              : '${ApiService().baseHost}/$imageUrl';
+        }
+      }
+
       setState(() {
         isLoading = false;
         hasError = false;
@@ -90,7 +101,8 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
-        title: Text(pageTitle, style: const TextStyle(color: Colors.white, fontSize: 18)),
+        title: Text(pageTitle,
+            style: const TextStyle(color: Colors.white, fontSize: 18)),
         backgroundColor: TColor.primary,
       ),
       backgroundColor: Colors.white,
@@ -103,21 +115,35 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
               ? _errorWidget()
               : doctors.isEmpty
               ? const Center(
-              child: Text("No doctors found", style: TextStyle(fontSize: 16, color: Colors.black54)))
+              child: Text("No doctors found",
+                  style: TextStyle(
+                      fontSize: 16, color: Colors.black54)))
               : ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            padding: const EdgeInsets.symmetric(
+                vertical: 10, horizontal: 16),
             itemCount: doctors.length,
             itemBuilder: (context, index) {
               final doctor = doctors[index];
               return DoctorRow(
                 doctor: doctor,
-                onPressed: () {
+                onPressed: () async {
+                  // ✅ Fetch saved user ID safely
+                  final userId = await SPrefs.getUserId() ?? 0;
+
+                  if (userId <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Invalid user session. Please log in again.")),
+                    );
+                    return;
+                  }
+
+                  // ✅ Navigate with real user ID
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => DoctorProfileScreen(
                         doctor: doctor,
-                        currentUserId: widget.currentUserId,
+                        currentUserId: userId,
                       ),
                     ),
                   );
@@ -139,7 +165,8 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 50),
           const SizedBox(height: 10),
-          const Text("Failed to load doctors", style: TextStyle(fontSize: 16, color: Colors.black54)),
+          const Text("Failed to load doctors",
+              style: TextStyle(fontSize: 16, color: Colors.black54)),
           const SizedBox(height: 8),
           ElevatedButton(
             onPressed: loadDoctors,

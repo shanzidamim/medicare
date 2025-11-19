@@ -16,12 +16,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _form = GlobalKey<FormState>();
   final _mobileCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  int _selectedType = 1; // For UI dropdown
+  int _selectedType = 1;
   bool _busy = false;
 
   Future<void> _doLogin() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
+
     try {
       final res = await ApiService().login(
         mobileCode: '+880',
@@ -29,50 +30,62 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passCtrl.text.trim(),
       );
 
+      print('🔹 Login Response: ${res.data}');
+
       if (res.data is! Map || res.data['status'] != true) {
         _snack(res.data['message']?.toString() ?? 'Login failed');
         setState(() => _busy = false);
         return;
       }
 
-      final data = res.data['data'] as Map;
-      final token = data['auth_token']?.toString() ?? '';
-      final userId = int.tryParse('${data['user_id']}') ?? 0;
-      final userType = int.tryParse('${data['user_type']}') ?? _selectedType;
+      final data = res.data['data'] as Map<String, dynamic>;
+
+      // ---------- ONLY THESE 3 LINES UPDATED ----------
+      final token = data['auth_token']?.toString() ?? '';     // FIXED
+      final userId = int.tryParse("${data['id']}") ?? 0;      // FIXED
+      final userType = int.tryParse("${data['user_type']}") ?? 1; // FIXED
+      // --------------------------------------------------
+
       final name = data['first_name']?.toString() ?? '';
+      final divisionName = data['division_name']?.toString() ?? 'Dhaka';
 
       await SPrefs.saveSession(
         token: token,
         userId: userId,
         userType: userType,
-        divisionName: 'Dhaka',
+        divisionName: divisionName,
         name: name,
       );
 
       ApiService().setAccessToken(token);
 
+      print("🔥 SAVED USER ID = $userId");
+      print("🔥 SAVED TOKEN = $token");
+
       if (!mounted) return;
 
-      // ✅ All user types go to MainTabScreen
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (_) => MainTabScreen(
-            initialDivision: 'Dhaka',
+            initialDivision: divisionName,
             currentUserId: userId,
           ),
         ),
             (_) => false,
       );
+
     } catch (e) {
-      _snack('Network error');
+      _snack('Network error: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   void _snack(String m) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(m)),
+    );
   }
 
   @override
@@ -85,22 +98,16 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               const SizedBox(height: 40),
-              Text(
-                'Welcome',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: TColor.primaryText,
-                ),
-              ),
+              Text('Welcome',
+                  style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: TColor.primary)),
               const SizedBox(height: 16),
-              Text(
-                'Sign in with your mobile & password',
-                style: TextStyle(color: TColor.secondaryText),
-              ),
+              Text('Sign in with your mobile & password',
+                  style: TextStyle(color: TColor.secondaryText)),
               const SizedBox(height: 24),
 
-              // 🔹 Account type dropdown (for UI only)
               DropdownButtonFormField<int>(
                 value: _selectedType,
                 items: const [
@@ -109,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   DropdownMenuItem(value: 3, child: Text('Medical Shop')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Account type (for UI)',
+                  labelText: 'Account type (UI only)',
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (v) => setState(() => _selectedType = v ?? 1),
@@ -157,10 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white,
                     ),
                   )
-                      : const Text(
-                    'Login',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                      : const Text('Login',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
 

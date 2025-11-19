@@ -4,6 +4,8 @@ import 'package:medicare/screen/shared_prefs_helper.dart';
 import 'package:medicare/screen/home/main_tab_screen.dart';
 import 'package:medicare/screen/home/medical_shop/shop_profile_edit_screen.dart';
 
+import '../common/color_extension.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
   @override
@@ -137,6 +139,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SizedBox(
               width: double.infinity, height: 48,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: TColor.primary,
+                ),
                 onPressed: _loading ? null : _submit,
                 child: _loading ? const CircularProgressIndicator() : const Text('Register & Continue'),
               ),

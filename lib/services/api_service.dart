@@ -1,14 +1,27 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 
+import '../screen/shared_prefs_helper.dart';
+
 class ApiService {
+  static const String _baseUrl = "http://192.168.35.243:3002/api";
+
   ApiService._internal() {
     _dio = Dio(BaseOptions(
-      baseUrl: "http://192.168.225.243:3002/api",
+      baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
     ));
+
+    // 🔥 Load token automatically from SharedPreferences
+    SPrefs.getAccessToken().then((token) {
+      if (token != null && token.isNotEmpty) {
+        debugPrint("🔐 LOADED TOKEN (auto): $token");
+        setAccessToken(token);
+      }
+    });
   }
+
 
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -16,6 +29,12 @@ class ApiService {
   late Dio _dio;
 
   String? _accessToken;
+
+  // 🧩 This getter automatically gives you the base host (for image URLs)
+  String get baseHost {
+    final uri = Uri.parse(_dio.options.baseUrl);
+    return "${uri.scheme}://${uri.host}:${uri.port}";
+  }
 
   void setAccessToken(String? t) {
     _accessToken = t;
@@ -35,7 +54,7 @@ class ApiService {
     required String mobileCode,
     required String mobile,
     required String password,
-    required int userType, // 1=user, 2=doctor, 3=medical shop
+    required int userType,
     String? firstName,
     String? email,
   }) {
@@ -43,7 +62,7 @@ class ApiService {
       'mobile_code': mobileCode,
       'mobile': mobile,
       'password': password,
-      'role': userType, // ✅ changed from user_type → role
+      'role': userType,
       if (firstName != null) 'first_name': firstName,
       if (email != null) 'email': email,
     });
@@ -61,17 +80,24 @@ class ApiService {
     });
   }
 
-
   // ---------------- DOCTOR PROFILE ----------------
-  Future<Map<String, dynamic>> getDoctorProfile(int doctorId) async {
-    final response = await _dio.get('/doctor/$doctorId');
-    return response.data;
+  Future<Map<String, dynamic>> getDoctorProfile(int id) async {
+    final res = await _dio.get("/doctors/$id");
+    if (res.data["status"] == true && res.data["data"] != null) {
+      return res.data["data"]; // ✅ return inner "data" object directly
+    }
+    return {};
   }
+
 
   Future<Map<String, dynamic>> updateDoctorProfile(Map<String, dynamic> data) async {
-    final response = await _dio.post('/doctor/update', data: data);
+    final response = await _dio.put(
+      '/admin/doctors/${data["doctor_id"]}',
+      data: data,
+    );
     return response.data;
   }
+
 
   // ---------------- SHOP PROFILE ----------------
   Future<Map<String, dynamic>> getShopProfile(int shopId) async {
@@ -128,22 +154,44 @@ class ApiService {
   }
 
   // ---------------- FEEDBACK ----------------
+  // ---------------- FEEDBACK ----------------
   Future<List<dynamic>> getDoctorFeedbacks(int doctorId) async {
-    final r = await _dio.get('/doctors/$doctorId/feedback');
-    return r.data['status'] == true ? (r.data['data'] as List) : [];
+    try {
+      final response = await _dio.get('/doctors/$doctorId/feedback');
+      if (response.statusCode == 200 && response.data['status'] == true) {
+        return (response.data['data'] as List);
+      }
+    } catch (e) {
+      debugPrint("getDoctorFeedbacks error: $e");
+    }
+    return [];
   }
 
   Future<bool> addDoctorFeedback({
     required int doctorId,
     required int userId,
     required String message,
+    required double rating,
   }) async {
-    final r = await _dio.post('/doctors/$doctorId/feedback', data: {
-      'user_id': userId,
-      'message': message,
-    });
-    return r.data['status'] == true;
+    try {
+      final res = await _dio.post(
+        "/doctors/$doctorId/feedback",
+        data: {
+          "user_id": userId,
+          "message": message,
+          "rating": rating,
+        },
+      );
+
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
+
+
+
+
 
   // ---------------- CHAT ----------------
   Future<List<dynamic>> getChat({
@@ -177,20 +225,82 @@ class ApiService {
     required String reason,
     required String message,
   }) async {
-    final r = await _dio.post('/appointments', data: {
-      'doctor_id': doctorId,
-      'user_id': userId,
-      'date': date,
-      'reason': reason,
-      'message': message,
-    });
-    return r.data['status'] == true;
+    try {
+      final dataBody = {
+        'doctor_id': doctorId,
+        'user_id': userId,
+        'appointment_date': date,
+        'reason': reason,
+        'message': message,
+      };
+
+      print("📤 FLUTTER SENDING BODY: $dataBody");
+
+      final res = await _dio.post(
+        '/appointments/book',
+        data: dataBody,
+      );
+
+
+      debugPrint("📥 APPOINTMENT RESPONSE: ${res.data}");
+      return res.data['status'] == true;
+    } catch (e) {
+      debugPrint("🚨 Book Appointment Error: $e");
+      return false;
+    }
   }
 
+
+
+  Future<List<dynamic>> getUserAppointments(int userId) async {
+    try {
+      final res = await _dio.get('/appointments/user/$userId');
+      return res.data;
+    } catch (e) {
+      debugPrint("User appointment error: $e");
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getDoctorAppointments(int doctorId) async {
+    try {
+      final res = await _dio.get('/appointments/doctor/$doctorId');
+      return res.data;
+    } catch (e) {
+      debugPrint("Doctor appointment error: $e");
+      return [];
+    }
+  }
+
+  Future<bool> updateAppointmentStatus({
+    required int appointmentId,
+    required String status, // 'approved' or 'cancelled'
+  }) async {
+    try {
+      final res = await _dio.put(
+        '/appointments/$appointmentId/status',
+        data: {'status': status},
+      );
+
+      return res.data['success'] == true;
+    } catch (e) {
+      debugPrint("Status update error: $e");
+      return false;
+    }
+  }
+
+
+
+
   // ---------------- SHOPS ----------------
+
+  // ---------------------------------------------------
+// ---------------------- SHOPS ----------------------
+// ---------------------------------------------------
+
   Future<Map<String, dynamic>?> getMyShop() async {
     final r = await _dio.get('/shops/me');
-    if (r.data['status'] == true) return r.data['data'] as Map<String, dynamic>?;
+    if (r.data['status'] == true) return r.data['data'];
     return null;
   }
 
@@ -204,46 +314,88 @@ class ApiService {
     return r.data['status'] == true;
   }
 
+
+// ---------------------------------------------------
+// 🔥 GET SHOPS BY DIVISION NAME — FIXED VERSION
+// ---------------------------------------------------
   Future<List<dynamic>> getMedicalShopsByDivision(String divisionName) async {
     try {
-      final response = await _dio.get('/shops/by_division', queryParameters: {
-        'division': divisionName,
-      });
-      if (response.data['status'] == true) {
-        return response.data['data'] as List;
+      final div = divisionName.trim();
+
+      debugPrint("🌍 Calling: /shops/by_division?division=$div");
+
+      final response = await _dio.get(
+        '/shops/by_division',
+        queryParameters: {"division": div},
+      );
+
+      debugPrint("🟦 SHOP API RAW RESPONSE: ${response.data}");
+
+      if (response.statusCode == 200 &&
+          response.data != null &&
+          response.data['status'] == true &&
+          response.data['data'] is List)
+      {
+        return response.data['data'];
       }
     } catch (e) {
-      debugPrint("getMedicalShopsByDivision error: $e");
+      debugPrint("❌ ERROR getMedicalShopsByDivision: $e");
     }
+
     return [];
   }
 
 
+// ---------------------------------------------------
+// UPLOAD SHOP IMAGE
+// ---------------------------------------------------
   Future<String?> uploadShopImage(int shopId, String filePath) async {
-    final fd = FormData.fromMap({
-      'image': await MultipartFile.fromFile(filePath),
-    });
-    final r = await _dio.post('/shops/$shopId/upload', data: fd);
-    if (r.data['status'] == true) return r.data['image_url'] as String?;
+    try {
+      final fd = FormData.fromMap({
+        'image': await MultipartFile.fromFile(filePath),
+      });
+
+      final r = await _dio.post('/shops/$shopId/upload', data: fd);
+
+      if (r.data['status'] == true) {
+        return r.data['image_url'];
+      }
+    } catch (e) {
+      debugPrint("❌ uploadShopImage error: $e");
+    }
+
     return null;
   }
-  // 🔹 Get shop feedbacks
+
+
+// ---------------------------------------------------
+// SHOP FEEDBACK
+// ---------------------------------------------------
   Future<List<dynamic>> getShopFeedbacks(int shopId) async {
     final r = await _dio.get('/shops/$shopId/feedback');
-    return r.data['status'] == true ? (r.data['data'] as List) : [];
+    return r.data['status'] == true ? (r.data['data'] ?? []) : [];
   }
 
-// 🔹 Add shop feedback
   Future<bool> addShopFeedback({
     required int shopId,
     required int userId,
     required String message,
+    required double rating,
   }) async {
-    final r = await _dio.post('/shops/$shopId/feedback', data: {
-      'user_id': userId,
-      'message': message,
-    });
-    return r.data['status'] == true;
+    try {
+      final res = await _dio.post(
+        "/shops/$shopId/feedback",
+        data: {
+          "user_id": userId,
+          "message": message,
+          "rating": rating,
+        },
+      );
+
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
 

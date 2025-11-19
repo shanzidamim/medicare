@@ -10,127 +10,116 @@ class ShopCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String name = obj["name"]?.toString() ?? "Unknown Shop";
-    final String address = obj["address"]?.toString() ?? "Address not available";
-    final String imageUrl = obj["image"]?.toString() ?? obj["image_url"]?.toString() ?? "";
-    final double rating = double.tryParse(obj["rating"]?.toString() ?? "4.0") ?? 4.0;
+    final String name =
+        obj["full_name"]?.toString() ?? obj["name"]?.toString() ?? "Unknown Shop";
+
+    final String address =
+        obj["address"]?.toString() ?? "Address not available";
+
+    final String imageUrl = obj["image_url"]?.toString() ?? "";
+
+    final int feedbackCount = obj["feedback_count"] ?? 0;
+
+    // ⭐ Use REAL RATING only when feedback exists
+    final double rating = feedbackCount > 0
+        ? double.tryParse(obj["rating"]?.toString() ?? "0") ?? 0.0
+        : 0.0;
 
     return InkWell(
       onTap: onPressed,
       child: SizedBox(
         width: 150,
+        height: 240,
         child: Stack(
           alignment: Alignment.topCenter,
           children: [
-            // --- Bottom White Card ---
-            Container(
-              margin: const EdgeInsets.only(top: 40),
-              padding: const EdgeInsets.only(top: 50, left: 15, right: 15, bottom: 15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 2,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: TColor.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+            Positioned(
+              top: 45,
+              child: Container(
+                width: 150,
+                height: 160,
+                padding: const EdgeInsets.fromLTRB(12, 55, 12, 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 3,
+                      offset: Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    address,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: TColor.secondaryText,
-                      fontSize: 12,
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name
+                    Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w700),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  IgnorePointer(
-                    ignoring: true,
-                    child: RatingStars(
-                      value: rating,
-                      starCount: 5,
-                      starSize: 10,
-                      starOffColor: const Color(0xff7c7c7c),
-                      starColor: const Color(0xffDE6732),
-                      valueLabelVisibility: false,
-                      maxValueVisibility: true,
-                      animationDuration: const Duration(milliseconds: 800),
-                      valueLabelPadding: const EdgeInsets.symmetric(vertical: 1, horizontal: 8),
-                      valueLabelMargin: const EdgeInsets.only(right: 8),
-                      onValueChanged: (_) {},
+
+                    // Address
+                    Text(
+                      address,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                      const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                  ),
-                  Text(
-                    "(${rating.toStringAsFixed(1)})",
-                    style: TextStyle(
-                      color: TColor.secondaryText,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+
+                    const SizedBox(height: 5),
+
+                    // ⭐ Rating Row (Same as doctor)
+                    Row(
+                      children: [
+                        RatingStars(
+                          value: rating.toDouble(),
+                          starCount: 5,
+                          starSize: 12,
+                          valueLabelVisibility: false,
+                          starColor: Color(0xffDE6732),
+                          starOffColor: Colors.grey,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          "($feedbackCount)",
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+
+                      ],
+                    )
+
+                  ],
+                ),
               ),
             ),
 
-            // --- Top Image ---
+            // SHOP IMAGE
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: _buildImage(imageUrl),
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                imageUrl,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  "assets/image/medical_shop.png",
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildImage(String imageUrl) {
-    if (imageUrl.isEmpty) {
-      return Image.asset(
-        "assets/image/medical_shop.png",
-        width: 70,
-        height: 70,
-        fit: BoxFit.cover,
-      );
-    }
-
-    // If image is hosted on API server (HTTP)
-    if (imageUrl.startsWith("http")) {
-      return Image.network(
-        imageUrl,
-        width: 70,
-        height: 70,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          "assets/image/medical_shop.png",
-          width: 70,
-          height: 70,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-
-    // Otherwise treat as local asset
-    return Image.asset(
-      imageUrl,
-      width: 70,
-      height: 70,
-      fit: BoxFit.cover,
     );
   }
 }

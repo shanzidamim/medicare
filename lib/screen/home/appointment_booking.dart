@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 
 import '../../common/color_extension.dart';
 import '../../services/api_service.dart';
+import '../shared_prefs_helper.dart';   // <-- REQUIRED to load user_id
 
 
 class AppointmentBookingScreen extends StatefulWidget {
   final int doctorId;
-  final int currentUserId;
+  final int currentUserId; // will be ignored (kept for compatibility)
 
   const AppointmentBookingScreen({
     super.key,
@@ -23,9 +24,25 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
   final ApiService _api = ApiService();
 
   DateTime? _date;
+  int _realUserId = 0;   // <-- NEW
   final TextEditingController _reasonCtrl = TextEditingController();
   final TextEditingController _msgCtrl = TextEditingController();
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserId();   // <-- NEW
+  }
+
+  Future<void> _loadUserId() async {
+    final session = await SPrefs.readSession();
+    setState(() {
+      _realUserId = session?['user_id'] ?? 0;
+    });
+
+    print("🔥 Loaded REAL USER ID = $_realUserId");
+  }
 
   Future<void> _pickDate() async {
     final results = await showCalendarDatePicker2Dialog(
@@ -48,22 +65,30 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
   }
 
   Future<void> _submit() async {
+    if (_realUserId == 0) {
+      _snack('User not logged in. Please login again.');
+      return;
+    }
     if (_date == null) {
-      _snack('Please select a date'); return;
+      _snack('Please select a date');
+      return;
     }
     if (_reasonCtrl.text.trim().isEmpty) {
-      _snack('Please enter a reason'); return;
+      _snack('Please enter a reason');
+      return;
     }
 
     setState(() => _submitting = true);
 
     final ok = await _api.bookAppointment(
       doctorId: widget.doctorId,
-      userId: widget.currentUserId,
-      date: _date!.toIso8601String().split('T').first,
+      userId: _realUserId,      // <-- FIXED (Correct user_id)
+      date: "${_date!.year}-${_date!.month.toString().padLeft(2, '0')}-${_date!.day.toString().padLeft(2, '0')}",
       reason: _reasonCtrl.text.trim(),
       message: _msgCtrl.text.trim(),
     );
+
+    print("📤 Sending Appointment with user_id = $_realUserId");
 
     setState(() => _submitting = false);
 
@@ -167,7 +192,11 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
                 ),
                 child: _submitting
                     ? const SizedBox(
-                    height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  height: 20, width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2,
+                  ),
+                )
                     : const Text("Book Appointment"),
               ),
             ),

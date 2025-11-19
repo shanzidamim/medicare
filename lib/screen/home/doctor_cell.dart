@@ -15,6 +15,8 @@ class DoctorCell extends StatelessWidget {
     final degree = obj["degrees"] ?? "";
     final division = obj["division_name"] ?? "";
     final imageUrl = obj["image_url"] ?? "";
+    final int feedbackCount = obj["feedback_count"] ?? 0;
+
     final double rating =
         double.tryParse(obj["rating"]?.toString() ?? "0.0") ?? 0.0;
 
@@ -87,52 +89,63 @@ class DoctorCell extends StatelessWidget {
                   // ===== Rating =====
                   Row(
                     children: [
-                      IgnorePointer(
-                        ignoring: true,
-                        child: RatingStars(
-                          value: rating,
-                          starCount: 5,
-                          starSize: 12,
-                          starSpacing: 2,
-                          valueLabelVisibility: false,
-                          starOffColor: const Color(0xffC4C4C4),
-                          starColor: const Color(0xffDE6732),
-                        ),
+                      RatingStars(
+                        value: rating.toDouble(),
+                        starCount: 5,
+                        starSize: 12,
+                        valueLabelVisibility: false,
+                        starColor: Color(0xffDE6732),
+                        starOffColor: Colors.grey,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
-                        "(${rating.toStringAsFixed(1)})",
-                        style: TextStyle(
-                          color: TColor.secondaryText,
+                        "($feedbackCount)",
+                        style: const TextStyle(
                           fontSize: 11,
+                          color: Colors.grey,
                         ),
                       ),
+
                     ],
-                  ),
+                  )
+
+
                 ],
               ),
             ),
 
             // ===== Doctor Image =====
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
-                imageUrl,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    Image.asset("assets/image/default_doctor.png",
-                        width: 70, height: 70, fit: BoxFit.cover),
-              )
-                  : Image.asset(
-                "assets/image/default_doctor.png",
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
+            // ===== Doctor Image =====
+            Positioned(
+              top: 0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  color: Colors.white, // background to avoid black edges
+                  child: imageUrl.isNotEmpty
+                      ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,        // ⭐ full image visible
+                    errorBuilder: (context, error, stackTrace) =>
+                        Image.asset(
+                          "assets/image/default_doctor.png",
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.contain,
+                        ),
+                  )
+                      : Image.asset(
+                    "assets/image/default_doctor.png",
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.contain,        // ⭐ no cropping
+                  ),
+                ),
               ),
             ),
+
           ],
         ),
       ),
