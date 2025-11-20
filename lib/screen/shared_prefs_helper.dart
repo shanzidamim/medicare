@@ -47,6 +47,7 @@ class SPrefs {
     return prefs.getString(_divisionKey) ?? 'Dhaka';
   }
 
+
   static Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);

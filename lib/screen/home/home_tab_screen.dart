@@ -102,13 +102,13 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
         orElse: () => divisions.first,
       );
 
+      // 🔥 Backend expects division_id
       final shops = await apiService.getMedicalShopsByDivision(
-        selected["division_name"].toString().trim(),
+        selected["id"].toString(),   // FIXED
       );
 
       final fixedShops = shops.map((s) {
         final img = (s["image_url"] ?? "").toString();
-
         final fullImage =
         img.startsWith("http") ? img : "${apiService.baseHost}/$img";
 
@@ -124,6 +124,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
       debugPrint("Load shops error: $e");
     }
   }
+
 
   @override
   void didUpdateWidget(HomeTabScreen oldWidget) {

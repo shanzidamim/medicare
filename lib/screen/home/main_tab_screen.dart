@@ -196,37 +196,43 @@ class _MainTabScreenState extends State<MainTabScreen>
             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
           ),
           actions: [
-            Container(
-              alignment: Alignment.center,
-              child: InkWell(
-                onTap: _selectDivision,
-                child: Container(
-                  height: 30,
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, color: TColor.primaryText, size: 15),
-                      const SizedBox(width: 8),
-                      Text(
-                        selectedDivision,
-                        style: TextStyle(
-                            color: TColor.primaryText,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ],
+
+            // Show Division Button ONLY on Home Tab
+            if (selectTab == 0)
+              Container(
+                alignment: Alignment.center,
+                child: InkWell(
+                  onTap: _selectDivision,
+                  child: Container(
+                    height: 30,
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on_outlined,
+                            color: TColor.primaryText, size: 15),
+                        const SizedBox(width: 8),
+                        Text(
+                          selectedDivision,
+                          style: TextStyle(
+                              color: TColor.primaryText,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+
             IconButton(
                 onPressed: () {},
                 icon: Icon(Icons.notifications, color: TColor.primary)),
           ],
+
         ),
 
         body: Column(
@@ -352,7 +358,7 @@ class _MainTabScreenState extends State<MainTabScreen>
       case '3':
         if (userType == 1) {
           Navigator.push(
-              context, MaterialPageRoute(builder: (_) => const UserAccountEditScreen()));
+              context, MaterialPageRoute(builder: (_) => const AccountSettingsScreen()));
         } else if (userType == 2) {
           Navigator.push(
               context, MaterialPageRoute(builder: (_) => const DoctorProfileEditScreen()));

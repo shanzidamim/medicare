@@ -13,10 +13,9 @@ class ApiService {
       receiveTimeout: const Duration(seconds: 30),
     ));
 
-    // 🔥 Load token automatically from SharedPreferences
     SPrefs.getAccessToken().then((token) {
       if (token != null && token.isNotEmpty) {
-        debugPrint("🔐 LOADED TOKEN (auto): $token");
+        debugPrint(" LOADED TOKEN (auto): $token");
         setAccessToken(token);
       }
     });
@@ -30,7 +29,6 @@ class ApiService {
 
   String? _accessToken;
 
-  // 🧩 This getter automatically gives you the base host (for image URLs)
   String get baseHost {
     final uri = Uri.parse(_dio.options.baseUrl);
     return "${uri.scheme}://${uri.host}:${uri.port}";
@@ -80,14 +78,39 @@ class ApiService {
     });
   }
 
+  // ==============================
+// GET USER PROFILE
+// ==============================
+  Future<Map<String, dynamic>> getUserProfile() async {
+    final session = await SPrefs.readSession();
+    final userId = session?['user_id'];
+
+    final r = await _dio.get('/users/$userId');
+    return r.data['status'] == true ? r.data['data'] : {};
+  }
+
+// ==============================
+// UPDATE USER PROFILE
+// ==============================
+  Future<bool> updateUserProfile(Map<String, dynamic> data) async {
+    final session = await SPrefs.readSession();
+    final userId = session?['user_id'];
+
+    final r = await _dio.put('/users/$userId', data: data);
+    return r.data['status'] == true;
+  }
+
+
   // ---------------- DOCTOR PROFILE ----------------
   Future<Map<String, dynamic>> getDoctorProfile(int id) async {
     final res = await _dio.get("/doctors/$id");
+
     if (res.data["status"] == true && res.data["data"] != null) {
-      return res.data["data"]; // ✅ return inner "data" object directly
+      return res.data["data"];  // only the data object
     }
     return {};
   }
+
 
 
   Future<Map<String, dynamic>> updateDoctorProfile(Map<String, dynamic> data) async {
@@ -101,14 +124,20 @@ class ApiService {
 
   // ---------------- SHOP PROFILE ----------------
   Future<Map<String, dynamic>> getShopProfile(int shopId) async {
-    final response = await _dio.get('/shop/$shopId');
+    final response = await _dio.get('/shops/$shopId/profile');
+
+    if (response.data["status"] == true && response.data["data"] != null) {
+      return response.data["data"];
+    }
+    return {};
+  }
+
+
+  Future<Map<String, dynamic>> updateShopProfile(int shopId, Map<String, dynamic> data) async {
+    final response = await _dio.put('/shops/$shopId', data: data);
     return response.data;
   }
 
-  Future<Map<String, dynamic>> updateShopProfile(Map<String, dynamic> data) async {
-    final response = await _dio.post('/shop/update', data: data);
-    return response.data;
-  }
 
   // ---------------- DIVISIONS ----------------
   Future<List<dynamic>> getDivisions() async {
@@ -242,10 +271,10 @@ class ApiService {
       );
 
 
-      debugPrint("📥 APPOINTMENT RESPONSE: ${res.data}");
+      debugPrint(" APPOINTMENT RESPONSE: ${res.data}");
       return res.data['status'] == true;
     } catch (e) {
-      debugPrint("🚨 Book Appointment Error: $e");
+      debugPrint("Book Appointment Error: $e");
       return false;
     }
   }
@@ -292,79 +321,53 @@ class ApiService {
 
 
 
-  // ---------------- SHOPS ----------------
-
-  // ---------------------------------------------------
-// ---------------------- SHOPS ----------------------
-// ---------------------------------------------------
 
   Future<Map<String, dynamic>?> getMyShop() async {
-    final r = await _dio.get('/shops/me');
+    final session = await SPrefs.readSession();
+    final shopId = session?['user_id'];
+
+    final r = await _dio.get('/shops/$shopId');
+
     if (r.data['status'] == true) return r.data['data'];
     return null;
   }
 
-  Future<bool> createShop(Map<String, dynamic> body) async {
-    final r = await _dio.post('/shops/create', data: body);
-    return r.data['status'] == true;
-  }
-
-  Future<bool> updateShop(int shopId, Map<String, dynamic> body) async {
-    final r = await _dio.put('/shops/$shopId', data: body);
-    return r.data['status'] == true;
+  Future<Map<String, dynamic>> updateShop(int shopId, Map<String, dynamic> body) async {
+    // backend uses POST /shops/update
+    final r = await _dio.post('/shops/update', data: body);
+    return r.data;
   }
 
 
 // ---------------------------------------------------
-// 🔥 GET SHOPS BY DIVISION NAME — FIXED VERSION
-// ---------------------------------------------------
-  Future<List<dynamic>> getMedicalShopsByDivision(String divisionName) async {
+  Future<List<dynamic>> getMedicalShopsByDivision(String divisionId) async {
     try {
-      final div = divisionName.trim();
-
-      debugPrint("🌍 Calling: /shops/by_division?division=$div");
-
       final response = await _dio.get(
         '/shops/by_division',
-        queryParameters: {"division": div},
+        queryParameters: {"division_id": divisionId},
       );
 
-      debugPrint("🟦 SHOP API RAW RESPONSE: ${response.data}");
-
-      if (response.statusCode == 200 &&
-          response.data != null &&
-          response.data['status'] == true &&
-          response.data['data'] is List)
-      {
+      if (response.data['status'] == true &&
+          response.data['data'] is List) {
         return response.data['data'];
       }
     } catch (e) {
-      debugPrint("❌ ERROR getMedicalShopsByDivision: $e");
+      debugPrint("ERROR getMedicalShopsByDivision: $e");
     }
 
     return [];
   }
 
-
 // ---------------------------------------------------
 // UPLOAD SHOP IMAGE
 // ---------------------------------------------------
-  Future<String?> uploadShopImage(int shopId, String filePath) async {
-    try {
-      final fd = FormData.fromMap({
-        'image': await MultipartFile.fromFile(filePath),
-      });
+  Future<Map<String, dynamic>> uploadShopImage(int shopId, String filePath) async {
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(filePath),
+    });
 
-      final r = await _dio.post('/shops/$shopId/upload', data: fd);
-
-      if (r.data['status'] == true) {
-        return r.data['image_url'];
-      }
-    } catch (e) {
-      debugPrint("❌ uploadShopImage error: $e");
-    }
-
-    return null;
+    final r = await _dio.post('/shops/$shopId/upload', data: formData);
+    return r.data;
   }
 
 

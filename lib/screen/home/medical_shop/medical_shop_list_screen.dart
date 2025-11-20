@@ -32,17 +32,35 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
 
   Future<void> _loadShops() async {
     try {
-      final list =
-      await apiService.getMedicalShopsByDivision(widget.divisionName);
+      // 1. Load all divisions
+      final divisions = await apiService.getDivisions();
+      if (divisions.isEmpty) {
+        setState(() => isLoading = false);
+        return;
+      }
 
-      // Fix URLs
+      // 2. Match divisionName to division_id
+      final selected = divisions.firstWhere(
+            (d) => d['division_name']
+            .toString()
+            .toLowerCase()
+            .contains(widget.divisionName.toLowerCase()),
+        orElse: () => divisions.first,
+      );
+
+      final divisionId = selected["id"].toString();
+      debugPrint("📌 Calling shops for division_id = $divisionId");
+
+      // 3. Call shop API with division_id
+      final list = await apiService.getMedicalShopsByDivision(divisionId);
+
+      // 4. Fix image URLs
       final fixed = list.map((shop) {
         final img = shop["image_url"]?.toString() ?? "";
-        final full = img.isNotEmpty
-            ? (img.startsWith("http")
+        final full = img.startsWith("http")
             ? img
-            : "${apiService.baseHost}/$img")
-            : "";
+            : (img.isNotEmpty ? "${apiService.baseHost}/$img" : "");
+
         return {...shop, "image_url": full};
       }).toList();
 
@@ -55,6 +73,7 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
       setState(() => isLoading = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

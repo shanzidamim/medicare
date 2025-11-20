@@ -14,139 +14,139 @@ class ShopProfileEditScreen extends StatefulWidget {
 
 class _ShopProfileEditScreenState extends State<ShopProfileEditScreen> {
   final _form = GlobalKey<FormState>();
+
   final _shopName = TextEditingController();
   final _address = TextEditingController();
   final _timing = TextEditingController();
   final _contact = TextEditingController();
-  String _division = "Dhaka";
+
   bool _saving = false;
 
-  String? _imageUrl; // saved image from server
-  File? _pickedImage; // new image to upload
+  String? _imageUrl;
+  File? _pickedImage;
 
-  final List<String> divisions = [
-    "Dhaka",
-    "Chattogram",
-    "Rajshahi",
-    "Khulna",
-    "Barishal",
-    "Sylhet",
-    "Rangpur",
-    "Mymensingh"
-  ];
+  // Divisions
+  List<dynamic> _divisions = [];
+  String? _selectedDivisionId;
 
   @override
   void initState() {
     super.initState();
-    _loadShopProfile();
+    _loadDivisions();
+    _loadShop();
   }
 
-  // 🔹 Load existing profile
-  Future<void> _loadShopProfile() async {
+  // ---------------- LOAD DIVISIONS ----------------
+  Future<void> _loadDivisions() async {
+    final div = await ApiService().getDivisions();
+    setState(() => _divisions = div);
+  }
+
+  // ---------------- LOAD SHOP PROFILE ----------------
+  Future<void> _loadShop() async {
     final session = await SPrefs.readSession();
     if (session == null) return;
 
-    try {
-      final res = await ApiService().getShopProfile(session['user_id']);
-      if (res['status'] == true && res['data'] != null) {
-        final d = res['data'];
-        setState(() {
-          _shopName.text = d['full_name'] ?? '';
-          _address.text = d['address'] ?? '';
-          _timing.text = d['timing'] ?? '';
-          _contact.text = d['contact'] ?? '';
-          _division = d['division'] ?? "Dhaka";
-          _imageUrl = d['image_url'];
-        });
-      }
-    } catch (e) {
-      debugPrint("❌ Error loading shop profile: $e");
-    }
+    // 🔥 call your same function name (but updated inside ApiService)
+    final shop = await ApiService().getMyShop();
+
+    if (shop == null) return;
+
+    setState(() {
+      _shopName.text = shop['full_name'] ?? '';
+      _address.text = shop['address'] ?? '';
+      _timing.text = shop['timing'] ?? '';
+      _contact.text = shop['contact'] ?? '';
+
+      _imageUrl = shop['image_url'];
+      _selectedDivisionId = shop['division_id']?.toString();
+    });
   }
 
-  // 🔹 Pick image from gallery
+
+  // ---------------- PICK IMAGE ----------------
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => _pickedImage = File(pickedFile.path));
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() => _pickedImage = File(picked.path));
     }
   }
 
-  // 🔹 Upload new image to server
+  // ---------------- UPLOAD IMAGE ----------------
   Future<void> _uploadImage(int shopId) async {
     if (_pickedImage == null) return;
-    try {
-      final imageUrl = await ApiService().uploadShopImage(shopId, _pickedImage!.path);
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        setState(() => _imageUrl = imageUrl);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Image uploaded successfully')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ Image upload failed')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error uploading image: $e')),
-      );
+
+    final formData = await ApiService().uploadShopImage(
+      shopId,
+      _pickedImage!.path,
+    );
+
+    if (formData is Map && formData['status'] == true) {
+      setState(() => _imageUrl = (formData['image_url'] ?? '').toString());
     }
   }
 
-  // 🔹 Save profile info
+  // ---------------- SAVE PROFILE ----------------
   Future<void> _saveProfile() async {
     if (!_form.currentState!.validate()) return;
+
     setState(() => _saving = true);
 
     try {
       final session = await SPrefs.readSession();
-      final userId = session?['user_id'];
+      final shopId = int.tryParse(session?['user_id'].toString() ?? '') ?? 0;
 
       final payload = {
-        'shop_id': userId,
+        'shop_id': shopId,                         // 🔥 MUST SEND shop_id
         'full_name': _shopName.text.trim(),
         'address': _address.text.trim(),
         'timing': _timing.text.trim(),
         'contact': _contact.text.trim(),
-        'division': _division,
+        'division_id': int.tryParse(_selectedDivisionId ?? "0") ?? 0,
       };
 
-      final res = await ApiService().updateShopProfile(payload);
-      if (res['status'] == true) {
-        if (_pickedImage != null) await _uploadImage(userId);
+      // 🔥 SAME FUNCTION NAME
+      final response = await ApiService().updateShop(shopId, payload);
+
+      if (response['status'] == true) {
+        if (_pickedImage != null) {
+          await _uploadImage(shopId);
+        }
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Shop profile updated successfully')),
+          const SnackBar(content: Text("Medical shop updated successfully")),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Update failed')),
+          SnackBar(content: Text(response['message'] ?? 'Update failed')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Network error')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Network or server error")));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Medical Shop Profile')),
+      appBar: AppBar(
+        title: const Text("Medical Shop Profile"),
+        backgroundColor: TColor.primary,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Form(
             key: _form,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🖼️ Image section
                 Center(
                   child: Stack(
                     children: [
@@ -155,10 +155,9 @@ class _ShopProfileEditScreenState extends State<ShopProfileEditScreen> {
                         backgroundColor: Colors.grey[300],
                         backgroundImage: _pickedImage != null
                             ? FileImage(_pickedImage!)
-                            : (_imageUrl != null
-                            ? NetworkImage(_imageUrl!)
-                            : const AssetImage('assets/image/shop_placeholder.png'))
-                        as ImageProvider,
+                            : (_imageUrl != null && _imageUrl!.isNotEmpty
+                            ? NetworkImage(_imageUrl!) as ImageProvider
+                            : const AssetImage('assets/image/default_shop.png')),
                       ),
                       Positioned(
                         bottom: 0,
@@ -167,82 +166,95 @@ class _ShopProfileEditScreenState extends State<ShopProfileEditScreen> {
                           onTap: _pickImage,
                           child: Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: TColor.primary,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                            child: const Icon(Icons.camera_alt,
+                                color: Colors.white),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
-                // 🏪 Shop Info Fields
+                // DIVISION
+                DropdownButtonFormField(
+                  value: _selectedDivisionId,
+                  decoration: const InputDecoration(
+                    labelText: "Division",
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _divisions
+                      .map(
+                        (e) => DropdownMenuItem(
+                      value: e['id'].toString(),
+                      child: Text(e['division_name']),
+                    ),
+                  )
+                      .toList(),
+                  onChanged: (v) =>
+                      setState(() => _selectedDivisionId = v as String),
+                ),
+
+                const SizedBox(height: 14),
+
                 TextFormField(
                   controller: _shopName,
                   decoration: const InputDecoration(
                     labelText: 'Shop Name',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => v!.isEmpty ? 'Enter shop name' : null,
+                  validator: (v) =>
+                  v!.isEmpty ? 'Enter shop name' : null,
                 ),
+
                 const SizedBox(height: 14),
+
                 TextFormField(
                   controller: _address,
                   decoration: const InputDecoration(
                     labelText: 'Address',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => v!.isEmpty ? 'Enter address' : null,
                 ),
+
                 const SizedBox(height: 14),
+
                 TextFormField(
                   controller: _timing,
                   decoration: const InputDecoration(
-                    labelText: 'Timing (e.g. Sat–Fri 8.00am–10.00pm)',
+                    labelText: 'Timing',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => v!.isEmpty ? 'Enter shop timing' : null,
                 ),
+
                 const SizedBox(height: 14),
+
                 TextFormField(
                   controller: _contact,
                   decoration: const InputDecoration(
                     labelText: 'Contact Number',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (v) => v!.isEmpty ? 'Enter contact number' : null,
                 ),
-                const SizedBox(height: 14),
 
-                // 📍 Division Dropdown
-                DropdownButtonFormField<String>(
-                  value: _division,
-                  decoration: const InputDecoration(
-                    labelText: 'Division',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: divisions
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _division = v ?? "Dhaka"),
-                ),
                 const SizedBox(height: 30),
 
-                // 💾 Save Button
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _saving ? null : _saveProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: TColor.primary,
-                      minimumSize: const Size(120, 45),
-                    ),
-                    child: _saving
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Save', style: TextStyle(color: Colors.white)),
+                ElevatedButton(
+                  onPressed: _saving ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColor.primary,
+                    minimumSize: const Size(140, 48),
+                  ),
+                  child: _saving
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    "Save",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],

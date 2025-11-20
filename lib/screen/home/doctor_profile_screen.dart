@@ -41,12 +41,15 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
       final profile = await _api.getDoctorProfile(id);
 
       setState(() {
-        _rating = double.tryParse((profile['rating'] ?? '0').toString()) ?? 0.0;
-        _feedbackCount =
-            int.tryParse((profile['feedback_count'] ?? '0').toString()) ?? 0;
+        _rating = double.tryParse(profile['rating'].toString()) ?? 0.0;
+        _feedbackCount = int.tryParse(profile['feedback_count'].toString()) ?? 0;
       });
-    } catch (_) {}
+    } catch (e) {
+      print(e);
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +143,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             RatingStars(
-                              value: _rating.toDouble(),
-                              maxValue: 5,
+                              value: _rating,
                               starCount: 5,
                               starSize: 16,
                               valueLabelVisibility: false,
@@ -156,10 +158,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           ],
                         ),
 
-
                         const SizedBox(height: 6),
 
-// Experience
                         Text("$experience Years Experience",
                             style: const TextStyle(
                                 color: Colors.black54, fontSize: 13)),
