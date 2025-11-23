@@ -5,7 +5,7 @@ import 'package:medicare/common/color_extension.dart';
 import 'package:medicare/services/api_service.dart';
 
 import 'appointment_booking.dart';
-import 'chat/chat_messege.dart';
+import 'chat/doctor_chat_screen.dart';
 import 'feedback_screen.dart';
 
 class DoctorProfileScreen extends StatefulWidget {
@@ -353,7 +353,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChatMessageScreen(
+        builder: (_) => DoctorChatScreen(
           doctorId: doctorId,
           doctorName: doctorName,
           currentUserId: widget.currentUserId,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_stars/flutter_rating_stars.dart';
 import 'package:medicare/common/color_extension.dart';
-import 'package:medicare/screen/home/medical_shop/chat_shop_message_screen.dart';
+import 'package:medicare/screen/home/medical_shop/shop_chat_screen.dart';
 import 'package:medicare/services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 

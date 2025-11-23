@@ -219,33 +219,6 @@ class ApiService {
   }
 
 
-
-
-
-  // ---------------- CHAT ----------------
-  Future<List<dynamic>> getChat({
-    required int doctorId,
-    required int userId,
-  }) async {
-    final r = await _dio.get('/chat/$doctorId/$userId');
-    return r.data['status'] == true ? (r.data['data'] as List) : [];
-  }
-
-  Future<bool> sendChat({
-    required int doctorId,
-    required int userId,
-    required String sender,
-    required String message,
-  }) async {
-    final r = await _dio.post('/chat/send', data: {
-      'doctor_id': doctorId,
-      'user_id': userId,
-      'sender': sender,
-      'message': message,
-    });
-    return r.data['status'] == true;
-  }
-
   // ---------------- APPOINTMENTS ----------------
   Future<bool> bookAppointment({
     required int doctorId,
@@ -398,6 +371,49 @@ class ApiService {
       return res.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<bool> sendMessage(Map<String, dynamic> data) async {
+    final response = await _dio.post("/chat/send", data: data);
+    return response.data["status"] == 1;
+  }
+
+  Future<List<dynamic>> loadMessages(int userId, int otherId) async {
+    final res = await _dio.post("/chat/load_messages", data: {
+      "user_id": userId,
+      "other_id": otherId,
+    });
+
+    if (res.data != null && res.data["status"] == 1) {
+      return res.data["data"];
+    }
+
+    return [];
+  }
+
+
+
+
+
+  Future<List<dynamic>> loadChatList(int userId) async {
+    final r = await _dio.get("/chat/user_list/$userId");
+    return r.data["data"];
+  }
+// =============================
+// GET RECENT CHATS FOR USER
+// =============================
+  Future<List<dynamic>> getRecentChats(int userId) async {
+    try {
+      final r = await _dio.get("/recent_chats/$userId");
+
+      if (r.data["status"] == true || r.data["status"] == 1) {
+        return r.data["data"] ?? [];
+      }
+      return [];
+    } catch (e) {
+      print("Error getRecentChats: $e");
+      return [];
     }
   }
 
