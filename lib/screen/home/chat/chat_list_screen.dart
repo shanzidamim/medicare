@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:medicare/services/api_service.dart';
 
-import 'chat/doctor_chat_screen.dart';
-import 'medical_shop/shop_chat_screen.dart';
+import 'doctor_chat_screen.dart';
+import 'shop_chat_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   final int userId;
@@ -34,6 +34,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
     });
   }
 
+  // ----------- CHECK DOCTOR OR SHOP ----------
+  Future<String> detectPartnerType(int id) async {
+    try {
+      final d = await api.getDoctorProfile(id);
+      if (d.isNotEmpty) return "doctor";
+
+      final s = await api.getShopProfile(id);
+      if (s.isNotEmpty) return "shop";
+    } catch (_) {}
+
+    return "user";
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -56,48 +69,30 @@ class _ChatListScreenState extends State<ChatListScreen> {
       itemBuilder: (_, i) {
         final c = list[i];
 
-        // ---------- FIELDS COMING FROM API ----------
         final String name = c["name"]?.toString() ?? "Unknown";
-        final String lastMessage = c["message"]?.toString() ?? "";
+        final String lastMessage = c["last_message"]?.toString() ?? "";
         final String imageUrl = c["image_url"]?.toString() ?? "";
-        final String partnerType = c["partner_type"]?.toString() ?? "";
-        final int partnerId = int.tryParse(
-          c["partner_id"]?.toString() ?? "",
-        ) ??
-            0;
-        final String createdAt = c["created_at"]?.toString() ?? "";
+        final int partnerId = int.tryParse(c["partner_id"]?.toString() ?? "") ?? 0;
 
-        // Time only (HH:mm) – safe substring
-        String timeText = "";
-        if (createdAt.length >= 16) {
-          timeText = createdAt.substring(11, 16);
-        }
+        final String createdAt = c["created_at"]?.toString() ?? "";
+        String timeText = createdAt.length >= 16 ? createdAt.substring(11, 16) : "";
 
         return ListTile(
           leading: CircleAvatar(
             radius: 25,
-            backgroundImage: (imageUrl.isNotEmpty)
+            backgroundImage: imageUrl.isNotEmpty
                 ? NetworkImage(imageUrl)
-                : const AssetImage("assets/image/icons8-user-100.png")
-            as ImageProvider,
-          ),
-          title: Text(
-            name,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            lastMessage,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Text(
-            timeText,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                : const AssetImage("assets/image/icons8-user-100.png") as ImageProvider,
           ),
 
-          // ----------- OPEN CHAT BY PARTNER TYPE ----------
-          onTap: () {
-            if (partnerType == "doctor") {
+          title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: Text(timeText, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+
+          onTap: () async {
+            String type = await detectPartnerType(partnerId);
+
+            if (type == "doctor") {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -109,7 +104,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   ),
                 ),
               );
-            } else if (partnerType == "shop") {
+            } else if (type == "shop") {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -122,7 +117,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 ),
               );
             } else {
-              // future: user-to-user chat etc.
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Unknown chat type")),
               );

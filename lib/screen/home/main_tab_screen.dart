@@ -3,15 +3,15 @@ import 'package:medicare/common/color_extension.dart';
 import 'package:medicare/common_widget/menu_row.dart';
 import 'package:medicare/screen/home/home_tab_screen.dart';
 import 'package:medicare/screen/home/medical_chat_app.dart';
-import 'package:medicare/screen/home/shop_chat_list_screen.dart';
+import 'package:medicare/screen/home/chat/shop_chat_list_screen.dart';
 import 'package:medicare/screen/home/user_account_edit_screen.dart';
 import 'package:medicare/screen/shared_prefs_helper.dart';
 import '../../services/api_service.dart';
 import '../doctor_appointments_screen.dart';
 import '../user_appointments_screen.dart';
 
-import 'chat_list_screen.dart';
-import 'doctor_chat_list_screen.dart';
+import 'chat/chat_list_screen.dart';
+import 'chat/doctor_chat_list_screen.dart';
 
 import 'doctor_profile_edit_screen.dart';
 import 'medical_shop/shop_profile_edit_screen.dart';

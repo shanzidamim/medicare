@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-import '../../../common/color_extension.dart';
 import '../../../services/api_service.dart';
+import '../../../common/color_extension.dart';
 
 class DoctorChatScreen extends StatefulWidget {
-  final int doctorId;
-  final int currentUserId;
+  final int doctorId;       // partner user ID
+  final int currentUserId;  // logged in doctor/user
   final String doctorName;
   final String? doctorAvatar;
 
@@ -31,16 +31,14 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
   final ImagePicker picker = ImagePicker();
 
   late IO.Socket _socket;
-
+  late String socketUrl;
   List<dynamic> _messages = [];
   bool _loading = true;
-
-  late String socketUrl;
 
   @override
   void initState() {
     super.initState();
-    socketUrl = _api.baseHost; // use ApiService URL
+    socketUrl = _api.baseHost;
     _connectSocket();
     _loadHistory();
   }
@@ -82,11 +80,7 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
     );
 
     setState(() {
-      _messages = (rows ?? []).map((msg) {
-        msg["sender_type"] ??= msg["sender_type"];
-        return msg;
-      }).toList();
-
+      _messages = rows ?? [];
       _loading = false;
     });
 
@@ -102,9 +96,7 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
 
     final localMsg = {
       "sender_id": widget.currentUserId,
-      "sender_type": "user",
       "receiver_id": widget.doctorId,
-      "receiver_type": "doctor",
       "message": text,
       "message_type": "text",
       "created_at": DateTime.now().toString(),
@@ -116,8 +108,6 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
     _socket.emit("send_message", {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.doctorId,
-      "sender_type": "user",
-      "receiver_type": "doctor",
       "message": text,
     });
   }
@@ -144,8 +134,6 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
     _socket.emit("send_image", {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.doctorId,
-      "sender_type": "user",
-      "receiver_type": "doctor",
       "image_url": base64Image,
     });
   }
@@ -157,25 +145,25 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
     }
   }
 
-  // ================= CHAT BUBBLE (SAME STYLE AS SHOP) =================
+  // ================= CHAT BUBBLE =================
   Widget _chatBubble(dynamic m) {
-    final bool isUser =
+    final bool isMine =
         m["sender_id"].toString() == widget.currentUserId.toString();
 
     final bool isImage = m["message_type"] == "image";
 
     return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isUser ? const Color(0xff647EE6) : const Color(0xffE8E8E8),
+          color: isMine ? const Color(0xff647EE6) : const Color(0xffE8E8E8),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
-            bottomLeft: isUser ? const Radius.circular(18) : Radius.zero,
-            bottomRight: isUser ? Radius.zero : const Radius.circular(18),
+            bottomLeft: isMine ? const Radius.circular(18) : Radius.zero,
+            bottomRight: isMine ? Radius.zero : const Radius.circular(18),
           ),
         ),
         child: isImage
@@ -191,16 +179,13 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
           m["message"] ?? "",
           style: TextStyle(
             fontSize: 15,
-            color: isUser ? Colors.white : Colors.black,
+            color: isMine ? Colors.white : Colors.black,
           ),
         ),
       ),
     );
   }
 
-
-
-  // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,7 +204,7 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
             ),
           ),
 
-          // INPUT BAR (BLUE BOX, SAME AS SHOP)
+          // INPUT BAR
           SafeArea(
             child: Container(
               padding: const EdgeInsets.all(10),

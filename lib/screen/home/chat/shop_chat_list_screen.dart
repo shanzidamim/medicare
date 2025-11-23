@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:medicare/services/api_service.dart';
-import 'chat/doctor_chat_screen.dart';
+import 'shop_chat_screen.dart';
 
-class DoctorChatListScreen extends StatefulWidget {
-  final int doctorId;
+class ShopChatListScreen extends StatefulWidget {
+  final int shopId; // logged in shop ID
 
-  const DoctorChatListScreen({super.key, required this.doctorId});
+  const ShopChatListScreen({super.key, required this.shopId});
 
   @override
-  State<DoctorChatListScreen> createState() => _DoctorChatListScreenState();
+  State<ShopChatListScreen> createState() => _ShopChatListScreenState();
 }
 
-class _DoctorChatListScreenState extends State<DoctorChatListScreen> {
+class _ShopChatListScreenState extends State<ShopChatListScreen> {
   final ApiService api = ApiService();
   List<dynamic> list = [];
   bool loading = true;
@@ -23,7 +23,7 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen> {
   }
 
   Future<void> load() async {
-    final data = await api.getRecentChats(widget.doctorId); // doctorId = current userId
+    final data = await api.getRecentChats(widget.shopId);
     setState(() {
       list = data;
       loading = false;
@@ -33,9 +33,10 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen> {
   @override
   Widget build(BuildContext context) {
     if (loading) return const Center(child: CircularProgressIndicator());
+
     if (list.isEmpty) {
       return const Center(
-        child: Text("No chats found", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        child: Text("No chats found", style: TextStyle(fontSize: 16)),
       );
     }
 
@@ -48,31 +49,33 @@ class _DoctorChatListScreenState extends State<DoctorChatListScreen> {
 
         final name = c["name"] ?? "Unknown User";
         final imageUrl = c["image_url"] ?? "";
-        final userId = int.tryParse(c["partner_id"].toString()) ?? 0;
-        final lastMessage = c["message"] ?? "";
-        final time = c["created_at"].toString().length > 16
-            ? c["created_at"].toString().substring(11, 16)
-            : "";
+        final partnerUserId = int.tryParse(c["partner_id"].toString()) ?? 0;
+
+        final lastMsg = c["last_message"] ?? "";
+        final createdAt = c["created_at"].toString();
+        final time = createdAt.length >= 16 ? createdAt.substring(11, 16) : "";
 
         return ListTile(
           leading: CircleAvatar(
             radius: 25,
             backgroundImage: imageUrl.isNotEmpty
                 ? NetworkImage(imageUrl)
-                : const AssetImage("assets/image/icons8-user-100.png") as ImageProvider,
+                : const AssetImage("assets/image/icons8-user-100.png")
+            as ImageProvider,
           ),
           title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Text(lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
-          trailing: Text(time, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          subtitle: Text(lastMsg, maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: Text(time, style: const TextStyle(color: Colors.grey)),
+
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => DoctorChatScreen(
-                  doctorId: widget.doctorId,
-                  currentUserId: userId,
-                  doctorName: name,
-                  doctorAvatar: imageUrl,
+                builder: (_) => ShopChatMessageScreen(
+                  currentUserId: widget.shopId, // shop = logged in
+                  shopId: partnerUserId,        // user = chat partner
+                  shopName: name,
+                  shopAvatar: imageUrl,
                 ),
               ),
             );
