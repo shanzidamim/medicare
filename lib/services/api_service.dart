@@ -21,7 +21,6 @@ class ApiService {
     });
   }
 
-
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
 
@@ -32,6 +31,20 @@ class ApiService {
   String get baseHost {
     final uri = Uri.parse(_dio.options.baseUrl);
     return "${uri.scheme}://${uri.host}:${uri.port}";
+  }
+
+  /// FIX IMAGE URL (MAIN FIX)
+  String fixImage(dynamic url) {
+    if (url == null) return "";
+    String u = url.toString();
+    if (u.isEmpty) return "";
+    if (u.startsWith("http")) return u;
+
+    final host = baseHost;
+    if (!u.startsWith("/")) {
+      u = "/$u";
+    }
+    return "$host$u";
   }
 
   void setAccessToken(String? t) {
@@ -46,7 +59,6 @@ class ApiService {
       );
     }
   }
-
   // ---------------- AUTH ----------------
   Future<Response> register({
     required String mobileCode,

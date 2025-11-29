@@ -71,7 +71,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
         final String name = c["name"]?.toString() ?? "Unknown";
         final String lastMessage = c["last_message"]?.toString() ?? "";
-        final String imageUrl = c["image_url"]?.toString() ?? "";
+        final String imageUrl = api.fixImage(c["image_url"]);
         final int partnerId = int.tryParse(c["partner_id"]?.toString() ?? "") ?? 0;
 
         final String createdAt = c["created_at"]?.toString() ?? "";

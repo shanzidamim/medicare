@@ -31,42 +31,42 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
   final ImagePicker picker = ImagePicker();
 
   late IO.Socket _socket;
-  late String socketUrl;
   List<dynamic> _messages = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    socketUrl = _api.baseHost;
     _connectSocket();
     _loadHistory();
   }
 
   // ================= SOCKET CONNECT =================
   void _connectSocket() {
+    final socketUrl = _api.baseHost;
+
     _socket = IO.io(
       socketUrl,
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .disableAutoConnect()
+          .enableReconnection()
+          .enableForceNew()
+          .setPath("/socket.io/")
           .build(),
     );
 
-    _socket.connect();
-
     _socket.onConnect((_) {
-      print("🔌 SOCKET CONNECTED (doctor chat)");
+      print("🔌 SOCKET CONNECTED to $socketUrl");
 
       _socket.emit("join_room", {
         "sender_id": widget.currentUserId,
         "receiver_id": widget.doctorId,
       });
+    });
 
-      _socket.on("room_message", (data) {
-        setState(() => _messages.add(data));
-        _scrollToBottom();
-      });
+    _socket.on("room_message", (data) {
+      setState(() => _messages.add(data));
+      _scrollToBottom();
     });
   }
 
@@ -124,7 +124,7 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.doctorId,
       "message_type": "image",
-      "file_url": base64Image,
+      "image_url": base64Image,
       "created_at": DateTime.now().toString(),
     };
 
@@ -141,7 +141,11 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
   // ================= SCROLL TO BOTTOM =================
   void _scrollToBottom() {
     if (_scrollCtrl.hasClients) {
-      _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+      _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -151,6 +155,50 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
         m["sender_id"].toString() == widget.currentUserId.toString();
 
     final bool isImage = m["message_type"] == "image";
+
+    String? raw = m["image_url"] ?? m["file_url"];
+
+    // ⭐ FIX: ensure server path is correct
+    if (raw != null && !raw.startsWith("http") && !raw.startsWith("/")) {
+      raw = "/$raw";
+    }
+
+    Widget content;
+
+    if (isImage && raw != null) {
+      bool isBase64 = raw.length > 150; // detect base64
+
+      if (isBase64) {
+        // local preview
+        content = ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            base64Decode(raw),
+            width: 180,
+            fit: BoxFit.cover,
+          ),
+        );
+      } else {
+        // server image
+        final url = _api.fixImage(raw);
+        content = ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            url,
+            width: 180,
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+    } else {
+      content = Text(
+        m["message"] ?? "",
+        style: TextStyle(
+          fontSize: 15,
+          color: isMine ? Colors.white : Colors.black,
+        ),
+      );
+    }
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
@@ -166,26 +214,12 @@ class _DoctorChatScreenState extends State<DoctorChatScreen> {
             bottomRight: isMine ? Radius.zero : const Radius.circular(18),
           ),
         ),
-        child: isImage
-            ? ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            base64Decode(m["image_url"] ?? m["file_url"]),
-            width: 180,
-            fit: BoxFit.cover,
-          ),
-        )
-            : Text(
-          m["message"] ?? "",
-          style: TextStyle(
-            fontSize: 15,
-            color: isMine ? Colors.white : Colors.black,
-          ),
-        ),
+        child: content,
       ),
     );
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(

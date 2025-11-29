@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
 import '../../../common/color_extension.dart';
 import '../../../services/api_service.dart';
 
 class ShopChatMessageScreen extends StatefulWidget {
-  final int currentUserId;  // logged in SHOP ID
-  final int shopId;         // partner USER ID
+  final int currentUserId;
+  final int shopId;
   final String shopName;
   final String? shopAvatar;
 
@@ -28,17 +30,47 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
   final ScrollController _scrollCtrl = ScrollController();
   final ImagePicker picker = ImagePicker();
 
+  late IO.Socket _socket;
   List<dynamic> _messages = [];
   bool _loading = true;
-  bool _sending = false;
 
   @override
   void initState() {
     super.initState();
+    _connectSocket();
     _loadHistory();
   }
 
-  // ======================= LOAD MESSAGE HISTORY =======================
+  // ================= SOCKET CONNECT =================
+  void _connectSocket() {
+    final socketUrl = _api.baseHost;
+
+    _socket = IO.io(
+      socketUrl,
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .enableReconnection()
+          .enableForceNew()
+          .setPath("/socket.io/")
+          .build(),
+    );
+
+    _socket.onConnect((_) {
+      print("🟢 SHOP SOCKET CONNECTED");
+
+      _socket.emit("join_room", {
+        "sender_id": widget.currentUserId,
+        "receiver_id": widget.shopId,
+      });
+    });
+
+    _socket.on("room_message", (data) {
+      setState(() => _messages.add(data));
+      _scrollToBottom();
+    });
+  }
+
+  // ================= LOAD HISTORY =================
   Future<void> _loadHistory() async {
     setState(() => _loading = true);
 
@@ -47,53 +79,47 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
       widget.shopId,
     );
 
-    _messages = rows ?? [];
-
-    setState(() => _loading = false);
+    setState(() {
+      _messages = rows ?? [];
+      _loading = false;
+    });
 
     Future.delayed(const Duration(milliseconds: 150), _scrollToBottom);
   }
 
-  // ======================= SEND TEXT MESSAGE =======================
-  Future<void> _send() async {
+  // ================= SEND TEXT =================
+  void _sendText() {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
 
-    setState(() => _sending = true);
     _msgCtrl.clear();
 
-    // Local instant preview
     final localMsg = {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.shopId,
-      "message_type": "text",
       "message": text,
+      "message_type": "text",
       "created_at": DateTime.now().toString(),
     };
 
     setState(() => _messages.add(localMsg));
     _scrollToBottom();
 
-    // Backend — DO NOT SEND sender_type/receiver_type
-    await _api.sendMessage({
+    _socket.emit("send_message", {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.shopId,
       "message": text,
-      "message_type": "text",
     });
-
-    setState(() => _sending = false);
   }
 
-  // ======================= SEND IMAGE =======================
-  Future<void> sendImage() async {
+  // ================= SEND IMAGE =================
+  Future<void> _sendImage() async {
     final XFile? img = await picker.pickImage(source: ImageSource.gallery);
     if (img == null) return;
 
     final bytes = await img.readAsBytes();
     final base64Image = base64Encode(bytes);
 
-    // Local preview
     final localImg = {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.shopId,
@@ -105,29 +131,72 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
     setState(() => _messages.add(localImg));
     _scrollToBottom();
 
-    // Backend — NO sender_type/receiver_type
-    await _api.sendMessage({
+    _socket.emit("send_image", {
       "sender_id": widget.currentUserId,
       "receiver_id": widget.shopId,
       "image_url": base64Image,
-      "message_type": "image",
     });
   }
 
-  // ======================= SCROLL =======================
+  // ================= SCROLL TO BOTTOM =================
   void _scrollToBottom() {
     if (_scrollCtrl.hasClients) {
-      _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+      _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
     }
   }
 
-  // ======================= CHAT BUBBLE =======================
+  // ================= CHAT BUBBLE =================
   Widget _chatBubble(dynamic m) {
     final bool isMine =
         m["sender_id"].toString() == widget.currentUserId.toString();
 
     final bool isImage = m["message_type"] == "image";
-    final String? imgData = m["image_url"] ?? m["file_url"];
+
+    String? raw = m["image_url"] ?? m["file_url"];
+
+    // ⭐ FIX: ensure path starts with /
+    if (raw != null && !raw.startsWith("http") && !raw.startsWith("/")) {
+      raw = "/$raw";
+    }
+
+    Widget content;
+
+    if (isImage && raw != null) {
+      final bool isBase64 = raw.length > 150;
+
+      if (isBase64) {
+        content = ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            base64Decode(raw),
+            width: 180,
+            fit: BoxFit.cover,
+          ),
+        );
+      } else {
+        final String url = _api.fixImage(raw);
+        content = ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            url,
+            width: 180,
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+    } else {
+      content = Text(
+        m["message"] ?? "",
+        style: TextStyle(
+          fontSize: 15,
+          color: isMine ? Colors.white : Colors.black,
+        ),
+      );
+    }
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
@@ -139,38 +208,19 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
-            bottomLeft:
-            isMine ? const Radius.circular(18) : const Radius.circular(0),
-            bottomRight:
-            isMine ? const Radius.circular(0) : const Radius.circular(18),
+            bottomLeft: isMine ? const Radius.circular(18) : Radius.zero,
+            bottomRight: isMine ? Radius.zero : const Radius.circular(18),
           ),
         ),
-        child: isImage && imgData != null
-            ? ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            base64Decode(imgData),
-            width: 180,
-            fit: BoxFit.cover,
-          ),
-        )
-            : Text(
-          m["message"] ?? "",
-          style: TextStyle(
-            fontSize: 15,
-            color: isMine ? Colors.white : Colors.black,
-          ),
-        ),
+        child: content,
       ),
     );
   }
 
-  // ======================= BUILD UI =======================
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(title: Text(widget.shopName)),
 
       body: Column(
@@ -178,27 +228,24 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.separated(
+                : ListView.builder(
               controller: _scrollCtrl,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 20),
-              itemBuilder: (c, i) => _chatBubble(_messages[i]),
-              separatorBuilder: (_, __) => const SizedBox(height: 3),
+              padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
+              itemBuilder: (_, i) => _chatBubble(_messages[i]),
             ),
           ),
 
-          // INPUT BAR
+          // INPUT
           SafeArea(
             child: Container(
               padding: const EdgeInsets.all(10),
-              color: Colors.white,
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: sendImage,
+                    onTap: _sendImage,
                     child: Icon(Icons.attach_file,
-                        color: TColor.primary, size: 25),
+                        size: 26, color: TColor.primary),
                   ),
                   const SizedBox(width: 10),
 
@@ -215,30 +262,17 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
                           Expanded(
                             child: TextField(
                               controller: _msgCtrl,
-                              maxLines: null,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: "Type a message...",
-                                hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                ),
                                 border: InputBorder.none,
+                                hintStyle: TextStyle(color: Colors.white70),
                               ),
+                              style: const TextStyle(color: Colors.white),
                             ),
                           ),
-
                           GestureDetector(
-                            onTap: _sending ? null : _send,
-                            child: _sending
-                                ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                                : const Icon(Icons.send, color: Colors.white),
+                            onTap: _sendText,
+                            child: const Icon(Icons.send, color: Colors.white),
                           ),
                         ],
                       ),
@@ -247,7 +281,7 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
                 ],
               ),
             ),
-          ),
+          )
         ],
       ),
     );
