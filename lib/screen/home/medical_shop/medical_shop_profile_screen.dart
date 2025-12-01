@@ -39,7 +39,7 @@ class _MedicalShopProfileScreenState extends State<MedicalShopProfileScreen> {
     if (id == null) return;
 
     try {
-      final info = await _api.getShopProfile(id);  // ⭐ create endpoint
+      final info = await _api.getShopProfile(id);
       setState(() {
         _rating = double.tryParse((info['rating'] ?? '0').toString()) ?? 0.0;
         _feedbackCount =
@@ -127,7 +127,6 @@ class _MedicalShopProfileScreenState extends State<MedicalShopProfileScreen> {
 
                   const Divider(height: 25),
 
-                  // ⭐⭐⭐ FEEDBACK BUTTON ONLY ⭐⭐⭐
                   TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -153,7 +152,6 @@ class _MedicalShopProfileScreenState extends State<MedicalShopProfileScreen> {
 
                   const Divider(height: 25),
 
-                  // ⭐ Contact Section
                   const Text("Contact",
                       style:
                       TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),

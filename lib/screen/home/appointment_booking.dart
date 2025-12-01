@@ -41,7 +41,7 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
       _realUserId = session?['user_id'] ?? 0;
     });
 
-    print("🔥 Loaded REAL USER ID = $_realUserId");
+    print(" Loaded REAL USER ID = $_realUserId");
   }
 
   Future<void> _pickDate() async {
@@ -88,7 +88,7 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
       message: _msgCtrl.text.trim(),
     );
 
-    print("📤 Sending Appointment with user_id = $_realUserId");
+    print(" Sending Appointment with user_id = $_realUserId");
 
     setState(() => _submitting = false);
 

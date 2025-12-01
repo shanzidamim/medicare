@@ -127,7 +127,7 @@ class DoctorCell extends StatelessWidget {
                   child: imageUrl.isNotEmpty
                       ? Image.network(
                     imageUrl,
-                    fit: BoxFit.contain,        // ⭐ full image visible
+                    fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) =>
                         Image.asset(
                           "assets/image/default_doctor.png",
@@ -140,7 +140,7 @@ class DoctorCell extends StatelessWidget {
                     "assets/image/default_doctor.png",
                     width: 70,
                     height: 70,
-                    fit: BoxFit.contain,        // ⭐ no cropping
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

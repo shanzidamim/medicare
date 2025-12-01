@@ -20,7 +20,7 @@ Future<Map<String, dynamic>?> pickAndUploadImage(
         debugPrint("✔ Doctor image uploaded: ${result['image_url']}");
         return result;   // return MAP
       } else {
-        debugPrint("❌ Doctor upload failed: ${result['message']}");
+        debugPrint(" Doctor upload failed: ${result['message']}");
         return null;
       }
     } else {
@@ -30,12 +30,12 @@ Future<Map<String, dynamic>?> pickAndUploadImage(
         debugPrint("✔ Shop image uploaded: $result");
         return result;   // return MAP
       } else {
-        debugPrint("❌ Shop upload failed: ${result['message']}");
+        debugPrint("Shop upload failed: ${result['message']}");
         return null;
       }
     }
   } catch (e) {
-    debugPrint("❌ Upload error: $e");
+    debugPrint(" Upload error: $e");
     return null;
   }
 }

@@ -7,10 +7,12 @@ import 'package:medicare/screen/login/login_screen.dart';
 import 'package:medicare/screen/login/splash_screen.dart';
 import 'package:medicare/screen/shared_prefs_helper.dart';
 import 'package:medicare/services/api_service.dart';
+import 'package:medicare/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await NotificationService.init();
   runApp(const MyApp());
 }
 

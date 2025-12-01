@@ -70,7 +70,6 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
         );
       }
 
-      // ✅ Add dynamic image URL fix for each doctor
       for (var d in doctors) {
         final imageUrl = d['image_url']?.toString() ?? '';
         if (imageUrl.isNotEmpty) {
@@ -127,7 +126,6 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
               return DoctorRow(
                 doctor: doctor,
                 onPressed: () async {
-                  // ✅ Fetch saved user ID safely
                   final userId = await SPrefs.getUserId() ?? 0;
 
                   if (userId <= 0) {
@@ -137,7 +135,6 @@ class _AllDivisionDoctorsScreenState extends State<AllDivisionDoctorsScreen> {
                     return;
                   }
 
-                  // ✅ Navigate with real user ID
                   Navigator.push(
                     context,
                     MaterialPageRoute(

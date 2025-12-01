@@ -49,7 +49,7 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
       );
 
       final divisionId = selected["id"].toString();
-      debugPrint("📌 Calling shops for division_id = $divisionId");
+      debugPrint(" Calling shops for division_id = $divisionId");
 
       // 3. Call shop API with division_id
       final list = await apiService.getMedicalShopsByDivision(divisionId);
@@ -101,7 +101,7 @@ class _MedicalShopListScreenState extends State<MedicalShopListScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => MedicalShopProfileScreen(
-                    shop: Map<String, dynamic>.from(shop),   // ✅ FIX HERE
+                    shop: Map<String, dynamic>.from(shop),
                     currentUserId: widget.currentUserId,
                   ),
 

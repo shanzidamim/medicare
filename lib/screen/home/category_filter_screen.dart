@@ -4,7 +4,7 @@ import '../../services/api_service.dart';
 import 'doctor_list_screen.dart';
 
 class CategoryFilterScreen extends StatefulWidget {
-  final int currentUserId; // ✅ Added parameter
+  final int currentUserId;
 
   const CategoryFilterScreen({
     super.key,
@@ -47,7 +47,7 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
         });
       }
     } catch (e) {
-      print("❌ Error loading data: $e");
+      print(" Error loading data: $e");
       if (mounted) setState(() => isLoading = false);
     }
   }
@@ -145,7 +145,7 @@ class _CategoryFilterScreenState extends State<CategoryFilterScreen> {
                           selectedDivisionName:
                           selectedDivisionName ?? 'Unknown',
                           selectedCategory: cat,
-                          currentUserId: widget.currentUserId, // ✅ Added
+                          currentUserId: widget.currentUserId,
                         ),
                       ),
                     );

@@ -17,10 +17,8 @@ class ShopRow extends StatelessWidget {
     final name = obj['full_name'] ?? obj['name'] ?? "Medical Shop";
     final address = obj['address'] ?? "Address not available";
 
-    // ⭐ REAL FEEDBACK COUNT
     final int feedbackCount = obj['feedback_count'] ?? 0;
 
-    // ⭐ Use rating only if feedback exists
     final double rating = feedbackCount > 0
         ? double.tryParse(obj['rating']?.toString() ?? "0") ?? 0.0
         : 0.0;
@@ -83,7 +81,6 @@ class ShopRow extends StatelessWidget {
                     ),
                   ),
 
-                  // ⭐ RATING WITH FEEDBACK COUNT
                   Row(
                     children: [
                       IgnorePointer(
@@ -100,7 +97,6 @@ class ShopRow extends StatelessWidget {
 
                       const SizedBox(width: 6),
 
-                      // ⭐ Only show (count)
                       Text(
                         "($feedbackCount)",
                         style: TextStyle(

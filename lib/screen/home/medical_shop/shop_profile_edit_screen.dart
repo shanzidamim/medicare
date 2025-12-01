@@ -47,7 +47,6 @@ class _ShopProfileEditScreenState extends State<ShopProfileEditScreen> {
     final session = await SPrefs.readSession();
     if (session == null) return;
 
-    // 🔥 call your same function name (but updated inside ApiService)
     final shop = await ApiService().getMyShop();
 
     if (shop == null) return;
@@ -98,7 +97,7 @@ class _ShopProfileEditScreenState extends State<ShopProfileEditScreen> {
       final shopId = int.tryParse(session?['user_id'].toString() ?? '') ?? 0;
 
       final payload = {
-        'shop_id': shopId,                         // 🔥 MUST SEND shop_id
+        'shop_id': shopId,
         'full_name': _shopName.text.trim(),
         'address': _address.text.trim(),
         'timing': _timing.text.trim(),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_stars/flutter_rating_stars.dart';
 import '../../common/color_extension.dart';
-import '../../services/api_service.dart'; // ✅ added this import for baseHost
+import '../../services/api_service.dart';
 
 class DoctorRow extends StatelessWidget {
   final Map<String, dynamic> doctor;
@@ -22,7 +22,6 @@ class DoctorRow extends StatelessWidget {
     final imageUrl = doctor['image_url']?.toString() ?? "";
     final double rating = double.tryParse(doctor['rating']?.toString() ?? "0") ?? 0.0;
 
-    // ✅ Dynamic full image URL with fallback
     final fullImageUrl = imageUrl.isNotEmpty
         ? (imageUrl.startsWith("http")
         ? imageUrl
@@ -58,7 +57,7 @@ class DoctorRow extends StatelessWidget {
                 child: fullImageUrl.isNotEmpty
                     ? Image.network(
                   fullImageUrl,
-                  fit: BoxFit.contain,        // ⭐ show full image, no cropping
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, _) =>
                       Image.asset("assets/image/default_doctor.png",
                           width: 70, height: 70, fit: BoxFit.contain),
@@ -67,7 +66,7 @@ class DoctorRow extends StatelessWidget {
                   "assets/image/default_doctor.png",
                   width: 70,
                   height: 70,
-                  fit: BoxFit.contain,        // ⭐ no cropping
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
@@ -127,9 +126,8 @@ class DoctorRow extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
 
-                      /// ⭐ SHOW ONLY FEEDBACK COUNT
                       Text(
-                        "(${doctor['feedback_count'] ?? 0})",  // <--- NEW
+                        "(${doctor['feedback_count'] ?? 0})",
                         style: TextStyle(
                           color: TColor.secondaryText,
                           fontSize: 12,

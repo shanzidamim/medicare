@@ -24,7 +24,7 @@ class SPrefs {
     await prefs.setString(_divisionKey, divisionName);
     await prefs.setString(_nameKey, name ?? '');
     await prefs.setBool(_isLoggedInKey, true);
-    debugPrint("✅ Session saved (userId=$userId, userType=$userType)");
+    debugPrint(" Session saved (userId=$userId, userType=$userType)");
   }
 
   static Future<bool> isLoggedIn() async {
@@ -79,6 +79,6 @@ class SPrefs {
     await prefs.remove(_divisionKey);
     await prefs.remove(_nameKey);
     await prefs.remove(_isLoggedInKey);
-    debugPrint("🚪 Session cleared");
+    debugPrint(" Session cleared");
   }
 }

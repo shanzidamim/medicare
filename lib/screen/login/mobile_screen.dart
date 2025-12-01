@@ -43,7 +43,6 @@ class _MobileScreenState extends State<MobileScreen> {
         final String token = user['auth_token'] ?? '';
         final String divisionName = user['division_name'] ?? 'Dhaka';
 
-        // ✅ Save session using named parameters (NOT map)
         await SPrefs.saveSession(
           userId: userId,
           userType: userType,
@@ -51,10 +50,8 @@ class _MobileScreenState extends State<MobileScreen> {
           divisionName: divisionName,
         );
 
-        // ✅ Set access token globally
         ApiService().setAccessToken(token);
 
-        // ✅ Navigate based on user type
         if (userType == 3) {
           // Medical Shop
           Navigator.pushReplacementNamed(context, '/shopProfileEdit');
@@ -76,7 +73,7 @@ class _MobileScreenState extends State<MobileScreen> {
         );
       }
     } catch (e) {
-      debugPrint("❌ Login error: $e");
+      debugPrint(" Login error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Error connecting to server")),
       );

@@ -430,6 +430,26 @@ class ApiService {
   }
 
 
+  // ---------------- MEDICINE REMINDERS ----------------
+
+  Future<Map<String, dynamic>> addReminder(Map<String, dynamic> data) async {
+    final res = await _dio.post('/reminders/add', data: data);
+    return res.data;
+  }
+
+  Future<List<dynamic>> getReminders(int userId) async {
+    final res = await _dio.get('/reminders/list/$userId');
+    if (res.data != null && (res.data["status"] == 1 || res.data["status"] == true)) {
+      return res.data["data"] ?? [];
+    }
+    return [];
+  }
+
+  Future<bool> deleteReminder(int id) async {
+    final res = await _dio.post('/reminders/delete', data: {"id": id});
+    return res.data != null && (res.data["status"] == 1 || res.data["status"] == true);
+  }
+
 
   // ---------------- DOCTOR IMAGE UPLOAD ----------------
   Future<Map<String, dynamic>> uploadDoctorImage(int doctorId, String filePath) async {

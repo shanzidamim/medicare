@@ -56,7 +56,7 @@ class _ShopChatMessageScreenState extends State<ShopChatMessageScreen> {
     );
 
     _socket.onConnect((_) {
-      print("🟢 SHOP SOCKET CONNECTED");
+      print(" SHOP SOCKET CONNECTED");
 
       _socket.emit("join_room", {
         "sender_id": widget.currentUserId,

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:medicare/common/color_extension.dart';
 import 'package:medicare/common_widget/menu_row.dart';
 import 'package:medicare/screen/home/home_tab_screen.dart';
-import 'package:medicare/screen/home/medical_chat_app.dart';
 import 'package:medicare/screen/home/chat/shop_chat_list_screen.dart';
 import 'package:medicare/screen/home/user_account_edit_screen.dart';
+import 'package:medicare/screen/medicine_reminder_screen.dart';
 import 'package:medicare/screen/shared_prefs_helper.dart';
 import '../../services/api_service.dart';
 import '../doctor_appointments_screen.dart';
@@ -24,6 +24,7 @@ class MainTabScreen extends StatefulWidget {
     super.key,
     required this.initialDivision,
     required this.currentUserId,
+
   });
 
   @override
@@ -70,7 +71,7 @@ class _MainTabScreenState extends State<MainTabScreen>
     if (userType == 1) {
       menuArr = [
         {'name': 'My Appointments', 'icon': 'assets/image/appointment.png', 'action': '1'},
-        {'name': 'Symptom Checker', 'icon': 'assets/image/chatbot.png', 'action': '2'},
+        {'name': 'Medicine Reminder', 'icon': 'assets/image/icons8-add-reminder-64.png', 'action': '2'},
         {'name': 'Account Settings', 'icon': 'assets/image/account_setting.png', 'action': '3'},
         {'name': 'Logout', 'icon': 'assets/image/logout.png', 'action': '4'},
       ];
@@ -332,12 +333,7 @@ class _MainTabScreenState extends State<MainTabScreen>
                 width: 32,
                 color: selectTab == 1 ? TColor.primary : TColor.unselect,
               )),
-          Tab(
-              icon: Image.asset(
-                "assets/image/setting_tab_icon.png",
-                width: 32,
-                color: selectTab == 2 ? TColor.primary : TColor.unselect,
-              )),
+
         ],
       ),
     );
@@ -406,7 +402,7 @@ class _MainTabScreenState extends State<MainTabScreen>
 
       case '2':
         Navigator.push(
-            context, MaterialPageRoute(builder: (_) => MedicalChatApp()));
+            context, MaterialPageRoute(builder: (_) => MedicineReminderScreen(userId: widget.currentUserId)));
         break;
 
       case '3':

@@ -40,9 +40,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
     loadInitialData();
   }
 
-  // ----------------------------------------------------------
-  // INITIAL LOAD
-  // ----------------------------------------------------------
+
   Future<void> loadInitialData() async {
     try {
       final categories = await apiService.getCategories();
@@ -62,9 +60,7 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
     }
   }
 
-  // ----------------------------------------------------------
-  // LOAD DOCTORS
-  // ----------------------------------------------------------
+
   Future<void> loadDoctors(String divisionName) async {
     try {
       final divisions = await apiService.getDivisions();
@@ -102,7 +98,6 @@ class _HomeTabScreenState extends State<HomeTabScreen> {
         orElse: () => divisions.first,
       );
 
-      // 🔥 Backend expects division_id
       final shops = await apiService.getMedicalShopsByDivision(
         selected["id"].toString(),   // FIXED
       );

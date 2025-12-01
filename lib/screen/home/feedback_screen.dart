@@ -88,11 +88,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true, // ⭐ fixes input going down
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: const Text("Feedback")),
       body: Column(
         children: [
-          // ⭐ FEEDBACK LIST
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
@@ -145,7 +144,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             ),
           ),
 
-          // ⭐ ⭐ FIXED BOTTOM INPUT ⭐ ⭐
           SafeArea(
             child: Container(
               padding:

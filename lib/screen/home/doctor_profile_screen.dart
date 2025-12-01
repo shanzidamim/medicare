@@ -138,7 +138,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                                 color: TColor.secondaryText, fontSize: 13)),
                         const SizedBox(height: 6),
 
-// ⭐⭐ RESTORED RATING SECTION ⭐⭐
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -237,7 +236,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
                     const SizedBox(height: 15),
 
-                    // ⭐⭐⭐ CHAT & BOOK BUTTONS ⭐⭐⭐
                     Row(
                       children: [
                         Expanded(
